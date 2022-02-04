@@ -1,0 +1,45 @@
+---
+title: "step1-filter data"
+author: "longlong"
+date: "2022/2/4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# cleaning data
+- https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html
+- https://scrnaseq-course.cog.sanger.ac.uk/website/cleaning-the-expression-matrix.html
+```{r}
+rm(list = ls())  ## 魔幻操作，一键清空~
+options(stringsAsFactors = F)
+
+a=read.table('GSE111229_Mammary_Tumor_fibroblasts_768samples_rawCounts.txt.gz',
+               header = T ,sep = '\t') 
+```
+
+## method 1: lower-hinge of ERCC as cut-off to filter raw-data
+```{r}
+a2=a[grep("ERCC",rownames(a)),]
+a3=apply(a2,1,function(x) sum(x>0))
+a3=as.matrix(a3)
+fivenum(a3)
+##lower-hinge 13 as the cutoff
+a1=a[apply(a, 1, function(x) sum(x>0))>13,]
+```
+
+## method 2 for PDF: average value <1 to filter out
+```{r}
+a1=apply(a,1, mean)
+a1=as.matrix(a[a1>=1,])
+```
+
+# transfer counts to cpm
+dat=log2(edgeR::cpm(a1)+1)
+
+# save data
+```{r}
+save(dat, file = './counts.Rdata')
+```

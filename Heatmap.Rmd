@@ -1,0 +1,102 @@
+---
+title: "heatmap"
+author: "longlong"
+date: "2022/2/4"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r}
+rm(list = ls())  ## 魔幻操作，一键清空~
+options(stringsAsFactors = F) 
+```
+# Do counts data
+## data changed by cpm
+```{r}
+load("input.Rdata")
+library(pheatmap)
+```
+## filter ERCC genes
+```{r}
+dat1=dat[!(grepl("ERCC",rownames(dat))),]
+```
+## get sd top 100 gene
+```{r}
+dat2=dat1[names(tail(sort(apply(dat1, 1, sd)),100)),]
+```
+## do cluster. 
+# note: dist function is by row
+```{r}
+clus1=hclust(dist(t(dat2)))
+plot(clus1)
+```
+## based on the above pic, classify the data to 4 groups
+```{r}
+k=cutree(clus1,4)
+```
+## make a grouplist and do heatmap
+```{r}
+pd=data.frame(group=k)
+rownames(pd)=names(k)
+pheatmap(dat2,annotation_col =pd)
+```
+
+# redo a scale data
+## scale data
+# note: scale is by column
+```{r}
+dat3=  scale(t(dat2))
+```
+## modify the scaled data
+```{r}
+dat3[dat3>2]=2
+dat3[dat3< -2]=-2
+hist(dat3) ###have a look the scaled data distribution 
+```
+
+## preprocessed data for heatmap
+```{r}
+clus2=hclust(dist(dat3))
+plot(clus2)
+k1=cutree(clus2,4)
+pd1=data.frame(group=k1)
+rownames(pd1)=names(k1)
+```
+
+## heatmap
+```{r}
+pheatmap(t(dat3),annotation_col=pd1)
+```
+
+# load RPKM data to do heatmap
+## RPKM scale need log2 firstly
+```{r}
+rm(list = ls()) 
+library(pheatmap)
+load(file = "input_rpkm.Rdata")
+#filter ERCC
+dat0=as.matrix(dat[grep("ERCC",rownames(dat),invert = T),])
+#extract top100 sd
+dat1=dat0[names(tail(sort(apply(dat0,1,sd)),100)),]
+#scale,note: RPKM scale need log2 firstly
+dat2=log2(dat1+0.01)
+dat3=t(scale(t(dat2)))
+dat3[dat3>2]=2
+dat3[dat3< -2]=-2
+#annotation group
+k=hclust(dist(t(dat3)))
+annot1=cutree(k,4)
+annot2=data.frame(group=as.character(annot1))
+rownames(annot2)=names(annot1)
+pheatmap(dat3,annotation_col=annot2)
+```
+
+
+
+
+
+
+
+
