@@ -1,0 +1,38 @@
+---
+title: "simple PCA"
+author: "longlong"
+date: "2022/2/5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = F)
+knitr::opts_chunk$set(message  = F) 
+```
+
+# PCA
+
+```{r}
+rm(list = ls())  ## 魔幻操作，一键清空~
+options(stringsAsFactors = F)
+
+library("FactoMineR")
+library("factoextra") 
+
+load("prePCA.Rdata")
+
+##switch row and column and add grouplist
+dat4=t(dat3)
+dat5=cbind(dat4,annot2)
+##do PCA
+dat.pca <- PCA(dat5[,-ncol(dat5)], graph = FALSE) #'-'表示“非”
+fviz_pca_ind(dat.pca,repel =T,
+               geom.ind = "point", # show points only (nbut not "text")只显示点不显示文本
+               col.ind = dat5$group, # color by groups 颜色组
+               # palette = c("#00AFBB", "#E7B800"),
+               addEllipses = TRUE, # Concentration ellipses 集中成椭圆
+               legend.title = "Groups"
+  )
+
+```
