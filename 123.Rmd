@@ -24,7 +24,7 @@ library(pheatmap)
 
 dat1=dat[!(grepl("ERCC",rownames(dat))),]
 ```
-## get sd top 100 gene
+# get sd top 100 gene to
 ```{R}
 apply(dat1, 1, sd)
 dat2=dat1[names(tail(sort(apply(dat1, 1, sd)),100)),]
