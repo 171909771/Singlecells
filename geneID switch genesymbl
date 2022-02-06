@@ -1,0 +1,11 @@
+```{r}
+library(org.Hs.eg.db)
+library(annotate)
+
+# https://www.rdocumentation.org/packages/annotate/versions/1.50.0/topics/getSYMBOL
+geneid= rownames(dat1)
+genesymbls=getSYMBOL(geneid, data='org.Hs.eg')
+dat1$genesymb=genesymbls
+
+
+```
