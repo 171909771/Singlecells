@@ -1,0 +1,198 @@
+---
+title: "seurat"
+author: "longlong"
+date: "2022/2/5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load data
+```{r}
+rm(list = ls()) 
+Sys.setenv(R_MAX_NUM_DLLS=999)
+## 首先载入文章的数据
+load(file='../input.Rdata')
+counts=a
+# using raw counts is the easiest way to process data through Seurat.
+library(stringr) 
+meta=df
+
+# 下面的基因是文章作者给出的
+gs=read.table('top18-genes-in-4-subgroup.txt')[,1]
+
+library(pheatmap)
+library(Seurat)
+# 上面检测了 counts 和 meta 两个变量，后面需要使用
+
+```
+
+if(F){
+        library(Seurat)
+        # https://satijalab.org/seurat/mca.html
+        # 构建 Seurat 需要的对象
+        # 其中 min.cells 和 min.genes 两个参数是经验值
+        sce <- CreateSeuratObject(counts = counts, 
+                                  meta.data =meta,
+                                  min.cells = 5, #每个基因最低表达的细胞量
+                                  min.features  = 200, #每个细胞最低表达的基因量
+                                  project = "sce")
+        # 参考：https://github.com/satijalab/seurat/issues/668
+}
+
+
+# load data into seurat 
+```{r}
+sce <- CreateSeuratObject(counts = counts, 
+                          meta.data =meta,
+                          project = "sce")
+#add a parameter
+sce[["percent.ERCC"]] <- PercentageFeatureSet(sce, pattern = "^ERCC")
+```
+
+# QC and clean data
+## https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html
+## 2 pics to remove cells
+### pic 1
+```{r}
+plot2 <- FeatureScatter(sce, feature1 = "nCount_RNA", feature2 = "percent.ERCC")
+plot2
+```
+### pic 2
+```{r}
+qcdata=sce@meta.data
+library(ggplot2)
+qcdata %>% 
+        ggplot(aes(x=nCount_RNA , y=nFeature_RNA, color=percent.ERCC)) + 
+        geom_point() + 
+        scale_colour_gradient(low = "gray90", high = "black") +
+        stat_smooth(method=lm) +
+        scale_x_log10() + 
+        scale_y_log10() + 
+        theme_classic() +
+        geom_vline(xintercept = 500) +
+        geom_hline(yintercept = 250) +
+        facet_wrap(~plate)
+```
+
+### based on the above pic, set cutoff: nUMI >2000; ERCC<50%
+```{r}
+sce <- subset(sce, subset = nFeature_RNA > 2000 & percent.ERCC < 50)
+```
+
+## clean genes; average < 1
+```{r}
+counts1 <- GetAssayData(object = sce, slot = "counts")
+test1=apply(counts1,1, mean)
+filtered_counts <- counts1[test1>1, ]
+sce <- CreateSeuratObject(filtered_counts, meta.data = sce@meta.data)
+```
+
+# normalization
+```{r}
+scenorm <- NormalizeData(sce, normalization.method = "LogNormalize", scale.factor = 10000)
+```
+
+# get overlaping genes,note: this filtered method is different from that paper
+```{r}
+gs1=intersect(gs,rownames(scenorm@assays[["RNA"]]@counts))
+#just do a heatmap
+pheatmap(scenorm@assays[["RNA"]]@data[gs1,])
+```
+
+# find highly variable genes
+```{r}
+scenormvc <- FindVariableFeatures(scenorm, selection.method = "vst", nfeatures = 2000)
+plot1 <- VariableFeaturePlot(scenormvc)
+top10 <- head(VariableFeatures(scenormvc), 10)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1 + plot2
+```
+
+# scale data, may reduce avariable effect
+```{r}
+all.genes <- rownames(scenormvc)
+scaledata1 <- ScaleData(scenormvc, features = all.genes)
+
+if(F) #remove avariable effect
+{
+scaledata2 <- ScaleData(scenormvc, vars.to.regress = "percent.ERCC")
+}
+
+pheatmap(scaledata1@assays[["RNA"]]@scale.data[gs1,])
+```
+
+# linear dimensional reduction:PCA
+```{r}
+PCAdata1 <- RunPCA(scaledata1, features = VariableFeatures(object = scaledata1))
+## observe pca result
+### method1 text
+print(PCAdata1[["pca"]], dims = 1:5, nfeatures = 5)
+### method2 
+VizDimLoadings(PCAdata1, dims = 1:2, reduction = "pca")
+### method3
+DimPlot(PCAdata1, reduction = "pca",group.by = "g")
+### method4
+DimHeatmap(PCAdata1, dims = 1:4, cells = 691, balanced = TRUE,ncol=2)
+```
+
+# determine the dim
+```{r}
+ddim1 <- JackStraw(PCAdata1, num.replicate = 100)
+ddim2 <- ScoreJackStraw(ddim1, dims = 1:20)
+##choose dim by gap,method1
+JackStrawPlot(ddim2, dims = 1:20)
+##choose dim by gap,method2
+ElbowPlot(ddim2)
+
+##set cluster
+cluster1 <- FindNeighbors(ddim2, dims = 1:20)
+cluster2 <- FindClusters(cluster1, resolution = 0.2)
+head(Idents(cluster2))
+```
+
+# non-linear dimensional reduction
+```{r}
+## umap
+umap1 <- RunUMAP(cluster2, dims = 1:10)
+DimPlot(umap1, reduction = "umap")
+## tsne
+tsne1 <- RunTSNE(cluster2, dims = 1:10)
+DimPlot(tsne1, reduction = "tsne")
+```
+
+# Finding differentially expressed features 
+```{r}
+## find cluster 2 DEGs from all clusters,  min.pct regarded as minimum percentage in each cluster
+cluster2.markers <- FindMarkers(tsne1, ident.1 = 2, min.pct = 0.25)
+## find cluster 5 DEGs from cluster 0 and 3
+cluster5.markers <- FindMarkers(tsne1, ident.1 = 3, ident.2 = c(0, 3), min.pct = 0.25)
+## find all cluster DEGs
+pbmc.markers <- FindAllMarkers(tsne1, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+## find cluster 2 DEGs from all clusters,  test.use = "roc" means adding a AUC 
+cluster0.markers <- FindMarkers(tsne1, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+## summarize top2 gene in each cluster
+library(dplyr)
+pbmc.markers %>% group_by(cluster) %>%slice_max(n = 2, order_by = avg_log2FC) -> top2markers
+top2markers
+#visual
+## single gene was grouped by cluster
+VlnPlot(tsne1, features = c("Lrrc15"), slot = "counts", log = TRUE)
+## maping in tSNE
+FeaturePlot(tsne1, features = top2markers$gene)
+## 
+pbmc.markers %>% group_by(cluster) %>%slice_max(n = 10, order_by = avg_log2FC) -> top10markers
+### no right information
+DoHeatmap(tsne1, features = top10markers$gene) + NoLegend()
+```
+
+# add label in tsne
+## https://satijalab.org/seurat/articles/pbmc3k_tutorial.html
+
+
+
+
+
+

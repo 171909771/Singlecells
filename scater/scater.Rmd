@@ -1,0 +1,156 @@
+---
+title: "scater"
+author: "longlong"
+date: "2022/2/9"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load data, normalization and fliter data
+```{r}
+rm(list = ls()) 
+Sys.setenv(R_MAX_NUM_DLLS=999)
+## 首先载入文章的数据
+load(file='../input.Rdata')
+counts=a
+library(stringr) 
+meta=df
+
+library(scater)
+# 创建 scater 要求的对象
+sce <- SingleCellExperiment(
+  assays = list(counts = as.matrix(counts)), 
+  colData = meta
+)
+## normalization
+exprs(sce) <- log2(
+  calculateCPM(sce ) + 1)
+## 只有运行了下面的函数后才有各式各样的过滤指标
+genes=rownames(rowData(sce))
+genes[grepl('^MT-',genes)]
+genes[grepl('^ERCC-',genes)]
+## QC for colData-cells, add an information about ERCC
+scecol <- perCellQCMetrics(sce, 
+                         subsets = list(ERCC = grep('^ERCC',genes)))
+## QC for rowData-genes, likely no useful
+scerow=perFeatureQCMetrics(sce)
+tmp1=data.frame(scerow)
+## filter gene and sample by myself code
+test1=assay(sce)
+test2=apply(test1, 1, function(x) sum(x>0))
+
+tmp=data.frame(scecol)
+
+      
+sce1=sce[test2>5,tmp$detected>2000]
+```
+
+
+# 基因表达，理论上应该是跟384孔板 这个变量无关
+```{r}
+plotExpression(sce1, rownames(sce1)[1:6],
+               x = "plate", 
+               exprs_values = "logcounts") 
+```
+# 展示高表达量基因, 绘图有点耗时
+```{r}
+plotHighestExprs(sce1, exprs_values = "counts")
+```
+
+
+# PCA
+```{r}
+# draw PCA
+sce <- runPCA(sce1)
+plotPCA(sce)
+reducedDimNames(sce)
+# colnames(as.data.frame(colData(sce)))
+head(colData(sce))
+## PCA分布图上面添加临床信息--------------
+plotReducedDim(sce, dimred = "PCA", 
+                shape_by= "plate", 
+                colour_by= "g")
+```
+
+if(F){
+## 考虑 ERCC 影响后继续PCA. Note: new method can not for col
+sce@colData$plate
+sce2 <- runPCA(sce1, 
+                     subset_row = scerow$detected)
+plotPCA(sce2)
+## PCA分布图上面添加临床信息--------------
+plotReducedDim(sce2, dimred = "PCA", 
+               shape_by= "plate", 
+               colour_by= "g")
+
+}
+
+# 运行 tSNE 降维算法
+# !!!!!!!!! the bigger perplexity is, the more neighborhood number is. 
+```{r}
+set.seed(1000)
+sce <- runTSNE(sce, perplexity=10)
+plotTSNE(sce, 
+         shape_by= "plate", 
+         colour_by= "g")
+
+```
+
+# 对tSNE降维后结果进行不同的聚类
+# !!!!!! Note: PCA, UMAP, tSNE are dimensional reduction methods. kmeans and hcluster are cluster methods
+```{r}
+colData(sce)$tSNE_kmeans <- as.character(kmeans(sce@int_colData@listData$reducedDims$TSNE,
+                                                centers = 4)$clust)
+
+hc=hclust(dist(sce@int_colData@listData$reducedDims$TSNE ))
+plot(hc)
+clus = cutree(hc, 4) 
+colData(sce)$tSNE_hc <-  as.character(clus)
+plotTSNE(sce,  colour_by = "tSNE_kmeans")
+plotTSNE(sce,  colour_by = "tSNE_hc")
+table(colData(sce)$tSNE_hc , colData(sce)$tSNE_kmeans)
+
+## dimensional reduction by DiffusionMap
+library("destiny")
+
+sce1 <- runDiffusionMap(sce)
+
+colData(sce1)$Diff_kmeans <- as.character(kmeans(sce1@int_colData@listData$reducedDims$DiffusionMap,
+                                                centers = 4)$clust)
+plotDiffusionMap(sce1,  
+                 shape_by= "plate", 
+                 colour_by= "Diff_kmeans")
+
+## dimensional reduction by MDS
+sce2=logNormCounts(sce)
+sce1 <- runMDS(sce2)
+plotMDS(sce1)
+```
+
+
+# SC3 package with scater
+library(SC3) # BiocManager::install('SC3')
+sce <- sc3_estimate_k(sce1)
+## evaluate how many number of cluster
+metadata(sce)$sc3$k_estimation
+## preprocess before sc3 command
+rowData(sce)$feature_symbol=rownames(rowData(sce))
+# 耗费时间
+kn=4
+sc3_cluster="sc3_4_clusters"
+# 非常耗时
+sce <- sc3(sce, ks = kn, biology = TRUE)
+
+sc3_plot_consensus(sce, k = kn, show_pdata = c(sc3_cluster))
+sc3_plot_expression(sce, k = kn, show_pdata =  c(sc3_cluster))
+sc3_plot_markers(sce, k = kn, show_pdata =  c(sc3_cluster))
+plotPCA(sce, shape_by= "g" , colour_by =  sc3_cluster )
+sc3_interactive(sce)
+
+
+
+
+
