@@ -1,0 +1,10 @@
+
+# DBSCAN, load Tsne data to cluster by DBSCAN, note: semiauto to maniplulate the outlier dots.
+```{r}
+library(dbscan)
+CAFgroups<-dbscan(opt_tsne,eps=3.1)$cluster
+CAFgroups_full<-dbscan(opt_tsne,eps=3.1)
+CAFgroups[CAFgroups==0]<-1
+CAFgroups_full$cluster[CAFgroups_full$cluster==0]<-1
+plot(opt_tsne,  col=CAFgroups, pch=19, xlab="tSNE dim 1", ylab="tSNE dim 2")
+```
