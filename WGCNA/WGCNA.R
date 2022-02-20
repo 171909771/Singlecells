@@ -1,5 +1,9 @@
 
 # shell command
+## https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE48213
+  #wget -c ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE48nnn/GSE48213/suppl/GSE48213_RAW.tar
+  #tar -xf GSE48213_RAW.tar
+  #gzip -d *.gz
 awk '{print FILENAME"\t"$0}' GSM*.txt |grep -v EnsEMBL_Gene_ID >tmp.txt
 
 ## maybe skip the step to load data
