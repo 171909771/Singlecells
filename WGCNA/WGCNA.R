@@ -189,7 +189,7 @@ if(F){
   
 }
 
-## step 4 ： 模块可视化
+## step 4 ： 模块可视化, 可以不同做，就是hcluster下面加分组信息颜色
 if(T){
   
   # Convert labels to colors for plotting
