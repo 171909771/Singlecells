@@ -243,7 +243,7 @@ if(T){
   nGenes = ncol(datExpr)
   nSamples = nrow(datExpr)
   design=model.matrix(~0+ datTraits$subtype)
-  colnames(design)=levels(datTraits$subtype)
+  colnames(design)=levels(as.factor(datTraits$subtype))
   moduleColors <- labels2colors(net$colors)
   # Recalculate MEs with color labels
   a=moduleEigengenes(datExpr, moduleColors)
