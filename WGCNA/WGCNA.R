@@ -34,11 +34,12 @@ colnames(fpkm)=sapply(colnames(fpkm),function(x) strsplit(x,"_")[[1]][1])
 }
 
 
-
+# 正式开始
+                
 load("GSE48213-wgcna-input.RData")
 
 library(WGCNA)
-## step 1 :
+## step 1 : 导入数据
 if(T){
   
   fpkm[1:4,1:4]
@@ -60,7 +61,8 @@ if(T){
 }
 
 
-## step 2 
+## step 2 ：计算软阈值
+                      # 参考： https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/faq.html
 datExpr[1:4,1:4]
 if(T){
   powers = c(c(1:10), seq(from = 12, to=20, by=2))
@@ -105,20 +107,9 @@ if(T){
     verbose = 3
   )
   
-  net = blockwiseModules(
-    datExpr,
-    power = 6,
-    
-    TOMType = "unsigned", minModuleSize = 30,
-    deepSplit = 2, 
-    pamRespectsDendro = FALSE,
-    saveTOMs = F, 
-    verbose = 3
-  )
-  
   table(net$colors) 
 }
-## 然后是分布法完成网络构建，仅供有探索精神的同学挑战。
+## 下面的F 可以不用做，（ 然后是分布法完成网络构建，仅供有探索精神的同学挑战。）
 
 ## 构建加权共表达网络分为两步：
 ## 1. 计算邻近值，也是就是两个基因在不样品中表达量的表达相关系数(pearson correlation rho)，
@@ -189,7 +180,7 @@ if(F){
   
 }
 
-## step 4 ： 模块可视化, 可以不同做，就是hcluster下面加分组信息颜色
+## step 4 ： ##可以不同做，模块可视化, 就是hcluster下面加分组信息颜色
 if(T){
   
   # Convert labels to colors for plotting
@@ -340,7 +331,7 @@ if(T){
 }
 
 
-## step 7 
+## step 7  看模块之间的相关性
 # 主要是可视化 TOM矩阵，WGCNA的标准配图
 # 然后可视化不同 模块 的相关性 热图
 # 不同模块的层次聚类图
