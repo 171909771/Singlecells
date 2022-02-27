@@ -14,10 +14,54 @@ barcode.names = read.delim(barcode.path,
 colnames(mat) = barcode.names$V1
 rownames(mat) = feature.names$V1
 
-# using read10x()
+# using read10x() to read single sample
 library(Seurat)
 getwd() # get current path
 data_dir <- 'D:/test/GSE174574_RAW/1'
 list.files(data_dir)
 data <- Read10X(data.dir = data_dir)
 seurat_object = CreateSeuratObject(counts = data)
+
+# read multiple samples
+## error codes needed to modify, the purpose is that each sample has an own folder containing 3 files (barcode, features and matrix),
+if(F){
+fs=list.files('./','^GSM')
+fs
+library(tidyverse)
+samples=str_split(fs,'_',simplify = T)[,1]
+
+lapply(unique(samples),function(x){
+  y=fs[grepl(x,fs)]
+  folder=paste0("GSE174574/", str_split(y[1],'_',simplify = T)[,1])
+  dir.create(folder,recursive = T)
+  #为每个样本创建子文件夹
+  file.rename(paste0("GSE174574/",y[1]),file.path(folder,"barcodes.tsv.gz"))
+  #重命名文件，并移动到相应的子文件夹里
+  file.rename(paste0("GSE174574/",y[2]),file.path(folder,"features.tsv.gz"))
+  file.rename(paste0("GSE174574/",y[3]),file.path(folder,"matrix.mtx.gz"))
+})}
+
+
+## after creating a  set folder containing each sample folder
+library(Seurat)
+samples=list.files("GSE174574/")
+samples
+dir <- file.path('./GSE174574',samples)
+names(dir) <- samples
+
+## 合并方法1 全部合并
+counts <- Read10X(data.dir = dir)
+scRNA1 = CreateSeuratObject(counts, min.cells=3)
+dim(scRNA1)   #查看基因数和细胞总数
+table(scRNA1@meta.data$orig.ident)  #查看每个样本的细胞数
+
+## 合并方法2 分别建立后合并
+scRNAlist <- list()
+for(i in 1:length(dir)){
+  print(i)
+  counts <- Read10X(data.dir = dir[i])
+  scRNAlist[[i]] <- CreateSeuratObject(counts, min.cells=3)
+}
+scRNA2 <- merge(scRNAlist[[1]], y=c(scRNAlist[[2]], scRNAlist[[3]]))
+dim(scRNA2)   #查看基因数和细胞总数
+table(scRNA2@meta.data$orig.ident)  #查看每个样本的细胞数
