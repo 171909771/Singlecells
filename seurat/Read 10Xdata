@@ -1,0 +1,23 @@
+# if just read a matrix from GEO 3files (barcode, matrix and feature)
+library(Matrix)
+matrix_dir = "~/filtered_feature_bc_matrix/hg19/"   ##根据实际文件夹进行修改
+barcode.path <- paste0(matrix_dir, "barcodes.tsv")
+features.path <- paste0(matrix_dir, "genes.tsv")
+matrix.path <- paste0(matrix_dir, "matrix.mtx")
+mat <- readMM(file = matrix.path)
+feature.names = read.delim(features.path,
+                           header = FALSE,
+                           stringsAsFactors = FALSE)
+barcode.names = read.delim(barcode.path,
+                           header = FALSE,
+                           stringsAsFactors = FALSE)
+colnames(mat) = barcode.names$V1
+rownames(mat) = feature.names$V1
+
+# using read10x()
+library(Seurat)
+getwd() # get current path
+data_dir <- 'D:/test/GSE174574_RAW/1'
+list.files(data_dir)
+data <- Read10X(data.dir = data_dir)
+seurat_object = CreateSeuratObject(counts = data)
