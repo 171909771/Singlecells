@@ -188,6 +188,11 @@ pbmc.markers %>% group_by(cluster) %>%slice_max(n = 10, order_by = avg_log2FC) -
 DoHeatmap(tsne1, features = top10markers$gene) + NoLegend()
 ```
 
+# dividing a cluster interested
+```{r}
+Cluster2.only <- subset(x = tsne1, idents = c('2'))
+```
+
 # add label in tsne
 ## https://satijalab.org/seurat/articles/pbmc3k_tutorial.html
 
