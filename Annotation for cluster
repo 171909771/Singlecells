@@ -1,0 +1,25 @@
+# annotation for singlecell cluster
+BiocManager::install("SingleR")
+library(SingleR)
+# extract data from cds
+sce_for_SingleR <- HSMM_myo@assayData$exprs
+clusters=HSMM_myo@phenoData@data[["Cluster"]]
+#1 load database from singleR package
+mouseImmu <- ImmGenData()
+#1 map annotation to cluster
+pred.mouseImmu <- SingleR(test = sce_for_SingleR, ref = mouseImmu, labels = mouseImmu$label.main,
+                          method = "cluster", clusters = clusters, 
+                          assay.type.test = "logcounts", assay.type.ref = "logcounts")
+#2 load database from singleR package
+mouseRNA <- MouseRNAseqData()
+#2 map annotation to cluster
+pred.mouseRNA <- SingleR(test = sce_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.fine ,
+                         method = "cluster", clusters = clusters, 
+                         assay.type.test = "logcounts", assay.type.ref = "logcounts")
+# match 2 groups of data
+cellType=data.frame(ClusterID=levels(clusters),
+                    mouseImmu=pred.mouseImmu$labels,
+                    mouseRNA=pred.mouseRNA$labels )
+# add a subgroup into cds
+HSMM_myo@phenoData@data$singleR=cellType[match(clusters,cellType$ClusterID),'mouseRNA']
+
