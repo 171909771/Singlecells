@@ -124,6 +124,8 @@ scaledata2 <- ScaleData(scenormvc, vars.to.regress = "percent.ERCC")
 pheatmap(scaledata1@assays[["RNA"]]@scale.data[gs1,])
 ```
 
+# if know the dim, skip below 2 steps
+
 # linear dimensional reduction:PCA
 ```{r}
 PCAdata1 <- RunPCA(scaledata1, features = VariableFeatures(object = scaledata1))
