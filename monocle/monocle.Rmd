@@ -45,6 +45,41 @@ sc_cds <- newCellDataSet(
 test1=data.frame(apply(counts,1,sd))
 ```
 
+
+## switch seurat cds to monocle cds
+if(F){
+conv1=newdata1
+# convert to monocle
+## matrix
+counts=conv1@assays[["RNA"]]@counts
+
+## genename
+gene_ann <- data.frame(
+  gene_short_name = Cluster_excludingMIT.only@assays[["RNA"]]@data@Dimnames[[1]], 
+  row.names = Cluster_excludingMIT.only@assays[["RNA"]]@data@Dimnames[[1]]
+)
+## phenotype 
+sample_ann=data.frame(
+  Cluster = Cluster_excludingMIT.only@active.ident, 
+  row.names = Cluster_excludingMIT.only@assays[["RNA"]]@data@Dimnames[[2]]
+)
+
+## create cds
+pd <- new("AnnotatedDataFrame",
+          data=sample_ann)
+fd <- new("AnnotatedDataFrame",
+          data=gene_ann)
+sc_cds <- newCellDataSet(
+  as.matrix(counts), 
+  phenoData = pd,
+  featureData =fd,
+  expressionFamily = negbinomial.size(),
+  lowerDetectionLimit=1)
+}
+
+
+
+
 # QC data
 ```{r}
 library(dplyr)
