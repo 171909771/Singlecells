@@ -8,6 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# detail in chinese
+- https://www.jianshu.com/p/5d6fd4561bc0
 
 # load data
 ```{r}
