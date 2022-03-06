@@ -23,3 +23,5 @@ cellType=data.frame(ClusterID=levels(clusters),
 # add a subgroup into cds
 HSMM_myo@phenoData@data$singleR=cellType[match(clusters,cellType$ClusterID),'mouseRNA']
 
+###########################non-singleR annotation
+https://mp.weixin.qq.com/s?__biz=MzI1Njk4ODE0MQ==&mid=2247496724&idx=1&sn=df88dff2dfe32ae2108fa0ff8399b180&scene=21#wechat_redirect
