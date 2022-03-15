@@ -1,0 +1,8 @@
+# https://mp.weixin.qq.com/s/AvUHjcU7XoMMUFM0KlU3bw
+
+# get a data, cluster from row
+library("factoextra")
+fviz_nbclust(test3, kmeans, method='wss') 
+fviz_nbclust(test3, hcut, method='silhouette',hc_method='complete')
+### speed too slow 
+fviz_nbclust(test3, kmeans, method = "gap_stat")
