@@ -2,6 +2,7 @@
 
 # get a data, cluster from row
 library("factoextra")
+# elbow methods
 fviz_nbclust(test3, kmeans, method='wss') 
 fviz_nbclust(test3, hcut, method='silhouette',hc_method='complete')
 ### speed too slow 
