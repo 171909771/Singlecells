@@ -62,6 +62,7 @@ if(T){
 
 
 ## step 2 ：计算软阈值
+                      # https://www.jianshu.com/p/1804fb6d2ed8 非常重要解释软阈值
                       # 参考： https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/faq.html
 datExpr[1:4,1:4]
 if(T){
