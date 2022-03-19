@@ -62,18 +62,22 @@ if(T){
 
 
 ## step 2 ：计算软阈值
+                      # 软阈值就是用几次方取构建无尺度分布
                       # https://www.jianshu.com/p/1804fb6d2ed8 非常重要解释软阈值
                       # 参考： https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/faq.html
 datExpr[1:4,1:4]
 if(T){
+  # 給几次方一个范围
   powers = c(c(1:10), seq(from = 12, to=20, by=2))
-  # Call the network topology analysis function
+  # 计算软阈值，非常重要的一步
   sft = pickSoftThreshold(datExpr, powerVector = powers, verbose = 5)
+  # 下面的steps是可视化
   #设置网络构建参数选择范围，计算无尺度分布拓扑矩阵
   png("step2-beta-value.png",width = 800,height = 600)
   # Plot the results:
   ##sizeGrWindow(9, 5)
   par(mfrow = c(1,2));
+  # 设置R方的阈值线，就是无尺度分布的可行度
   cex1 = 0.9;
   # Scale-free topology fit index as a function of the soft-thresholding power
   plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
