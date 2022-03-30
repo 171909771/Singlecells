@@ -152,8 +152,14 @@ JackStrawPlot(ddim2, dims = 1:20)
 ElbowPlot(ddim2)
 
 ##set cluster
+# 分辨率用多少 https://www.jianshu.com/p/ef28c8e723be
+
 cluster1 <- FindNeighbors(ddim2, dims = 1:20)
-cluster2 <- FindClusters(cluster1, resolution = 0.2)
+cluster2 <- FindClusters(cluster1, resolution = seq(0.5,1.2,by=0.1))
+clustree(cluster2)
+# 可以把这个参数加入到seurat数据中
+Idents(object = pbmc) <- "RNA_snn_res.0.3"
+
 head(Idents(cluster2))
 ```
 
