@@ -1,0 +1,19 @@
+https://www.jianshu.com/p/15937402b405
+
+library(SingleR)
+sce_for_SingleR <- GetAssayData(sce, slot="data")
+clusters=sce@meta.data$seurat_clusters
+
+
+mouseRNA <- MouseRNAseqData()
+pred.mouseRNA <- SingleR(test = sce_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.main,
+                         method = "cluster", clusters = clusters, 
+                         assay.type.test = "logcounts", assay.type.ref = "logcounts")
+
+# 可视化看注释效果
+plotScoreHeatmap(pred.mouseRNA, clusters=pred.mouseRNA@rownames, fontsize.row = 9,show_colnames = T)
+
+# 添加到Seurat的主要分群里面
+new.cluster.ids <- pred.mouseRNA$pruned.labels
+names(new.cluster.ids) <- levels(sce)
+sce <- RenameIdents(sce,new.cluster.ids)
