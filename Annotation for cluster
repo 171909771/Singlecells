@@ -2,9 +2,13 @@ https://www.jianshu.com/p/15937402b405
 # annotation for singlecell cluster
 BiocManager::install("SingleR")
 library(SingleR)
-# extract data from cds
+# 方法一 extract data from cds
 sce_for_SingleR <- HSMM_myo@assayData$exprs
 clusters=HSMM_myo@phenoData@data[["Cluster"]]
+# 方法二 extract data from seurat
+sce_for_SingleR <- tsne1@assays[["RNA"]]@data
+clusters=tsne1@meta.data[["RNA_snn_res.0.5"]]
+
 #1 load database from singleR package
 mouseImmu <- ImmGenData()
 #1 map annotation to cluster
@@ -14,15 +18,25 @@ pred.mouseImmu <- SingleR(test = sce_for_SingleR, ref = mouseImmu, labels = mous
 #2 load database from singleR package
 mouseRNA <- MouseRNAseqData()
 #2 map annotation to cluster
-pred.mouseRNA <- SingleR(test = sce_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.fine ,
-                         method = "cluster", clusters = clusters, 
+# 注意用这种方法de.method="wilcox"会更好
+pred.mouseRNA <- SingleR(test = sce_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.fine,
+                         method = "cluster", clusters = clusters, de.method="wilcox",
                          assay.type.test = "logcounts", assay.type.ref = "logcounts")
+# 用下面的方法看分组情况
+plotScoreHeatmap(pred.mouseRNA, clusters=pred.mouseRNA@rownames, fontsize.row = 9,show_colnames = T)
+
 # match 2 groups of data
 cellType=data.frame(ClusterID=levels(clusters),
                     mouseImmu=pred.mouseImmu$labels,
                     mouseRNA=pred.mouseRNA$labels )
 # add a subgroup into cds
 HSMM_myo@phenoData@data$singleR=cellType[match(clusters,cellType$ClusterID),'mouseRNA']
+# add a subgroup into seurat
+tsne1@meta.data$singleR=cellType[match(clusters,cellType$ClusterID),'mouseRNA']
+# seurat看tsne分组
+DimPlot(sce, reduction = "tsne", label = T)
+
+
 
 ###########################non-singleR annotation
 https://mp.weixin.qq.com/s?__biz=MzI1Njk4ODE0MQ==&mid=2247496724&idx=1&sn=df88dff2dfe32ae2108fa0ff8399b180&scene=21#wechat_redirect
