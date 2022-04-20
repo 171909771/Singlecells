@@ -1,0 +1,15 @@
+# 根据DJ1 分群
+test1=microgliasce
+
+wcl=test1@assays[["RNA"]]@counts["Park7",]>0
+
+wcl1=gsub("FALSE","L",wcl)
+wcl1=gsub("TRUE","H",wcl1)
+wcl2=as.factor(wcl1)
+names(wcl2)=names(wcl)
+sce=test1
+sce@active.ident=wcl2
+
+# 按照DJ1的分群，找差异基因
+park7.markers.GSEA=FindMarkers(sce, ident.1 = "H", ident.2 = "L", min.pct = 0.25)
+park7.markers.GSEA$genename=rownames(park7.markers.GSEA)
