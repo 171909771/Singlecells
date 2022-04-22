@@ -5,10 +5,23 @@ sce_for_SingleR <- GetAssayData(sce, slot="data")
 clusters=sce@meta.data$seurat_clusters
 
 
+
+mouseImmu <- ImmGenData()
+#1 map annotation to cluster
+pred.mouseImmu <- SingleR(test = sce_for_SingleR, ref = mouseImmu, labels = mouseImmu$label.main,
+                          method = "cluster", clusters = clusters, de.method="wilcox",
+                          assay.type.test = "logcounts", assay.type.ref = "logcounts")
+#2 load database from singleR package
 mouseRNA <- MouseRNAseqData()
-pred.mouseRNA <- SingleR(test = sce_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.main,
-                         method = "cluster", clusters = clusters, 
+#2 map annotation to cluster
+# 注意用这种方法de.method="wilcox"会更好
+pred.mouseRNA <- SingleR(test = sce_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.fine,
+                         method = "cluster", clusters = clusters, de.method="wilcox",
                          assay.type.test = "logcounts", assay.type.ref = "logcounts")
+
+cellType=data.frame(ClusterID=levels(clusters),
+                    mouseImmu=pred.mouseImmu$labels,
+                    mouseRNA=pred.mouseRNA$labels )
 
 # 可视化看注释效果
 plotScoreHeatmap(pred.mouseRNA, clusters=pred.mouseRNA@rownames, fontsize.row = 9,show_colnames = T)
