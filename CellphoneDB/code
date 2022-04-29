@@ -1,0 +1,25 @@
+####seurat注释后的信息
+
+# 保存注释cellphonedb_meta
+meta_data <- cbind(rownames(tsne1@meta.data), as.character(tsne1@active.ident))
+meta_data <- as.matrix(meta_data)
+meta_data[is.na(meta_data)] = "Unkown" #  细胞类型中不能有NA
+meta1=meta_data[1:100,]
+write.table(meta_data, 'cellphonedb_meta.txt', sep='\t', quote=F, row.names=F)
+
+# 保存cellphonedb_count
+# 转换同源基因
+memory.limit(1000000)
+library(homologene)
+test1=as.data.frame(tsne1@assays[["RNA"]]@data)
+genelist=rownames(test1)
+genehmlist=homologene(genelist, inTax = 10090, outTax = 9606)
+genehmlist=genehmlist[1:2]
+names(genehmlist)=c("mm","hsa")
+test1$gene=rownames(test1)
+test2=merge(test1,genehmlist,by.x="gene",by.y="mm")
+test2$gene=test2$hsa
+test2$hsa=NULL
+test3=test2[1001:1500,1:101]
+write.table(as.matrix(test2), 'cellphonedb_count.txt', sep='\t', quote=F,row.names  = F)
+
