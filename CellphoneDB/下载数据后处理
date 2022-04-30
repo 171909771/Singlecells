@@ -1,0 +1,119 @@
+library(tidyverse)
+library(RColorBrewer)
+library(scales)
+
+pvalues=read.table("pvalues.txt",header = T,sep = "\t",stringsAsFactors = F)
+pvalues=pvalues[,12:dim(pvalues)[2]] #此时不关注前11列
+statdf=as.data.frame(colSums(pvalues < 0.05)) #统计在某一种细胞pair的情况之下，显著的受配体pair的数目；阈值可以自己选
+colnames(statdf)=c("number")
+
+# 合并名字中的cells
+rownames(statdf)=gsub(".cells","cells",rownames(statdf))
+
+#排在前面的分子定义为indexa；排在后面的分子定义为indexb
+statdf$indexb=str_replace(rownames(statdf),"^.*\\.","")
+statdf$indexa=str_replace(rownames(statdf),"\\..*$","")
+#设置合适的细胞类型的顺序
+rankname=sort(unique(statdf$indexa)) 
+#转成因子类型，画图时，图形将按照预先设置的顺序排列
+statdf$indexa=factor(statdf$indexa,levels = rankname)
+statdf$indexb=factor(statdf$indexb,levels = rankname)
+
+# cluster1 和 cluster2 不求和的热图
+statdf%>%ggplot(aes(x=indexa,y=indexb,fill=number))+geom_tile(color="white")+
+  scale_fill_gradientn(colours = c("#4393C3","#ffdbba","#B2182B"),limits=c(0,30))+
+  scale_x_discrete("cluster 1 produces molecule 1")+
+  scale_y_discrete("cluster 2 produces molecule 2")+
+  theme_minimal()+
+  theme(
+    axis.text.x.bottom = element_text(hjust = 1, vjust = NULL, angle = 45),
+    panel.grid = element_blank()
+  )
+
+############cluster与cluster之间的关系图
+# https://www.jianshu.com/p/38a9376f5286
+library(psych)
+library(qgraph)
+library(igraph)
+library(tidyverse)
+mynet <- read.delim("count_network.txt") #读取数据
+table(mynet$count)
+mynet %>% filter(count>0) -> mynet  # 过滤count为0的数据（有零会报错）
+head(mynet)
+net<- graph_from_data_frame(mynet) #构建net对象
+plot(net)
+
+
+# 节点上色
+allcolour=c("#DC143C","#0000FF","#20B2AA","#FFA500","#9370DB",
+            "#98FB98","#F08080","#1E90FF","#7CFC00","#FFFF00",
+            "#808000","#FF00FF","#FA8072","#7B68EE","#9400D3",
+            "#800080","#A0522D","#D2B48C","#D2691E","#87CEEB",
+            "#40E0D0","#5F9EA0","#FF1493",
+            "#FFE4B5","#8A2BE2","#228B22","#E9967A","#4682B4",
+            "#32CD32","#F0E68C","#FFFFE0","#EE82EE","#FF6347",
+            "#6A5ACD","#9932CC","#8B008B","#8B4513","#DEB887")
+
+karate_groups <- cluster_optimal(net) #统计每个端点的和
+coords <- layout_in_circle(net, order =
+                             order(membership(karate_groups)))  # 设置网络布局
+
+E(net)$width  <- E(net)$count/10  #根据count值设置边的宽 
+plot(net, edge.arrow.size=.1, 
+     edge.curved=0,
+     vertex.color=allcolour,
+     vertex.frame.color="#555555",
+     vertex.label.color="black",
+     layout = coords,
+     vertex.label.cex=.7) 
+
+# 边上色
+net2 <- net  # 复制一份备用
+
+for (i in 1: length(unique(mynet$SOURCE)) ){ #配置发出端的颜色
+  E(net)[map(unique(mynet$SOURCE),function(x) {
+    get.edge.ids(net,vp = c(unique(mynet$SOURCE)[i],x))
+  })%>% unlist()]$color <- allcolour[i]
+}  # 这波操作谁有更好的解决方案？ 
+
+# 优化曲线
+plot(net, edge.arrow.size=.1,  #箭头大小设置为0.1
+     edge.curved=0.2, # 只是调了曲率这个参数
+     vertex.color=allcolour,
+     vertex.frame.color="#555555", #圆圈颜色
+     vertex.label.color="black", #标签颜色
+     layout = coords, #网络布局位点
+     vertex.label.cex=.7#标签大小
+     )
+
+
+dev.off()
+length(unique(mynet$SOURCE))
+par(mfrow=c(3,4), mar=c(.3,.3,.3,.3))
+
+for (i in 1: length(unique(mynet$SOURCE)) ){
+  net1<-net2
+  
+  E(net1)$count <- ""
+  E(net1)[map(unique(mynet$SOURCE),function(x) {
+    get.edge.ids(net,vp = c(unique(mynet$SOURCE)[i],x))
+  })%>% unlist()]$count  <- E(net2)[map(unique(mynet$SOURCE),function(x) {
+    get.edge.ids(net,vp = c(unique(mynet$SOURCE)[i],x))
+  })%>% unlist()]$count  # 故技重施
+  
+  E(net1)[map(unique(mynet$SOURCE),function(x) {
+    get.edge.ids(net,vp = c(unique(mynet$SOURCE)[i],x))
+  })%>% unlist()]$color <- allcolour[i]
+  
+  plot(net1, edge.arrow.size=.1, 
+       edge.curved=0.4,
+       edge.label = E(net1)$count, # 绘制边的权重
+       vertex.color=allcolour,
+       vertex.frame.color="#555555",
+       vertex.label.color="black",
+       layout = coords,
+       vertex.label.cex=1
+  ) 
+  
+}
+
