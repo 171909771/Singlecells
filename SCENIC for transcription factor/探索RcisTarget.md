@@ -8,25 +8,31 @@ geneList1 <- read.table(file.path(system.file('examples', package='RcisTarget'),
                         stringsAsFactors=FALSE)[,1]
 geneLists <- list(hypoxia=geneList1 ) 
 geneLists
-```r
+```
 
 # 得到转录因子对应的motif。Motifs - Version 8 (mc8nr): 20003 motifs # Motifs - Version 9 (mc9nr): 24453 motifs
+```r
 data("motifAnnotations_mgi")
 motifAnnotations_hgnc 
+```
 # 把每个基因的TSS 周围10kb的序列用来预测motif排序，同一motif可以对应多个TF
+```r
 motifRankings <- importRankings("cisTarget_databases/hg19-tss-centered-10kb-7species.mc9nr.feather")
+```
 # 整合差异基因的motif
+```r
 motifEnrichmentTable_wGenes <- cisTarget(geneLists, motifRankings,
                                          motifAnnot=motifAnnotations_hgnc)
-
+```
 # cisTarget包含了
+```r
 motifs_AUC <- calcAUC(geneLists, motifRankings, nCores=1)
 auc <- getAUC(motifs_AUC)[1,]
 hist(auc, main="hypoxia", xlab="AUC histogram",
      breaks=100, col="#ff000050", border="darkred")
 nes3 <- (3*sd(auc)) + mean(auc) #谨慎，取的3倍sd，p<0.01
 abline(v=nes3, col="red")
-
+```
 
 
 
