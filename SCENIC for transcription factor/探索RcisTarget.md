@@ -1,5 +1,5 @@
-# https://mp.weixin.qq.com/s?__biz=MzAxMDkxODM1Ng==&mid=2247497365&idx=1&sn=051651c84403a9ce6a7411b639a32220&scene=21#wechat_redirect
-# https://www.jianshu.com/p/6e1d71db4220
+- https://mp.weixin.qq.com/s?__biz=MzAxMDkxODM1Ng==&mid=2247497365&idx=1&sn=051651c84403a9ce6a7411b639a32220&scene=21#wechat_redirect
+- https://www.jianshu.com/p/6e1d71db4220
 library(RcisTarget)
 # 读取示例基因
 geneList1 <- read.table(file.path(system.file('examples', package='RcisTarget'), "hypoxiaGeneSet.txt"), 
