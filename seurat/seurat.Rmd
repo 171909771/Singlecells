@@ -91,20 +91,26 @@ test1=apply(counts1,1, mean)
 filtered_counts <- counts1[test1>1, ]
 sce <- CreateSeuratObject(filtered_counts, meta.data = sce@meta.data)
 ```
+# 下面三步现在可以用SCTransform来做
+- http://events.jianshu.io/p/854f7493b293
+## store mitochondrial percentage in object meta data 
+pbmc <- PercentageFeatureSet(pbmc, pattern = "^MT-", col.name = "percent.mt") 
+## run sctransform 
+pbmc <- SCTransform(pbmc, vars.to.regress = "percent.mt", verbose = FALSE)
 
-# normalization
+## step1 normalization
 ```{r}
 scenorm <- NormalizeData(sce, normalization.method = "LogNormalize", scale.factor = 10000)
 ```
 
-# get overlaping genes,note: this filtered method is different from that paper
+### get overlaping genes,note: this filtered method is different from that paper
 ```{r}
 gs1=intersect(gs,rownames(scenorm@assays[["RNA"]]@counts))
 #just do a heatmap
 pheatmap(scenorm@assays[["RNA"]]@data[gs1,])
 ```
 
-# find highly variable genes
+## step2 find highly variable genes
 ```{r}
 scenormvc <- FindVariableFeatures(scenorm, selection.method = "vst", nfeatures = 2000)
 plot1 <- VariableFeaturePlot(scenormvc)
@@ -113,7 +119,7 @@ plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
 plot1 + plot2
 ```
 
-# scale data, may reduce avariable effect
+## step3 scale data, may reduce avariable effect
 ```{r}
 all.genes <- rownames(scenormvc)
 scaledata1 <- ScaleData(scenormvc, features = all.genes)
