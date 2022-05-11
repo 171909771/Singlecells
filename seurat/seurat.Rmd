@@ -53,6 +53,14 @@ sce <- CreateSeuratObject(counts = counts,
 #add a parameter
 sce[["percent.ERCC"]] <- PercentageFeatureSet(sce, pattern = "^ERCC")
 ```
+## SCTransform可以代替之前NormalizeData, ScaleData, 和 FindVariableFeatures依次运行的三个命令
+### 计算每个细胞中的线粒体含量 
+pbmc <- PercentageFeatureSet(pbmc, pattern = "^MT-", col.name = "percent.mt") 
+
+### run sctransform 
+# 使用vars.to.regress参数指定对线粒体含量进行校正 
+pbmc <- SCTransform(pbmc, vars.to.regress = "percent.mt", verbose = FALSE) 
+
 
 # QC and clean data
 ## https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html
