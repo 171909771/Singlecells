@@ -1,3 +1,4 @@
+- https://mp.weixin.qq.com/s/TJsdj7qesZGlvmEkNLAy0A
 # 生成 loom文件
 
 rmsk=/home/chan87/hg38_rmsk.gtf       #UCSC table browser 下载
