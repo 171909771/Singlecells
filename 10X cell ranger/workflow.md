@@ -40,3 +40,20 @@ nohup cellranger count --id=out \
                   --nosecondary \
                   --localcores=12 \
                   --localmem=28 &
+
+# 如果是4个SRR为一个样本时用下面的代码
+- https://bioinformaticsworkbook.org/dataAnalysis/RNA-Seq/Single_Cell_RNAseq/Chromium_Cell_Ranger.html#gsc.tab=0  #参考网页
+## cellranger
+
+### 改名
+ls SRR*|while read id ; do echo ${id%_*};done|uniq>txt1   # 取值每一个SRR值
+cat txt1|while read id;do mv ${id}_1.fastq.gz ${id}_S1_L00${a}_R1_001.fastq.gz;mv ${id}_2.fastq.gz ${id}_S1_L00${a}_R2_001.fastq.gz; a=`expr $a + 1` ;done    #改名
+
+### 启动cellranger
+nohup cellranger count --id=out  \
+--transcriptome=/home/chan87/index/mm39 \
+--fastqs=/home/chan87/bio.test/SRP320164/  \
+--sample=SRR14570592,SRR14570593,SRR14570594,SRR14570595 \
+--nosecondary  \
+--localcores=12  \
+--localmem=28 &
