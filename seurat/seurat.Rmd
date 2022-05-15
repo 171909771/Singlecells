@@ -44,24 +44,35 @@ if(F){
         # 参考：https://github.com/satijalab/seurat/issues/668
 }
 
-
-# load data into seurat 
+# 正式开始！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+#  load data into seurat 
+## 过滤细胞和基因，第一种方法
 ```{r}
 sce <- CreateSeuratObject(counts = counts, 
                           meta.data =meta,
+                          min.cells = 5, #每个基因最低表达的细胞量
+                          min.features  = 200, #每个细胞最低表达的基因量
                           project = "sce")
-#add a parameter
-sce[["percent.ERCC"]] <- PercentageFeatureSet(sce, pattern = "^ERCC")
 ```
-## SCTransform可以代替之前NormalizeData, ScaleData, 和 FindVariableFeatures依次运行的三个命令
-### 计算每个细胞中的线粒体含量 
-pbmc <- PercentageFeatureSet(pbmc, pattern = "^MT-", col.name = "percent.mt") 
 
-### run sctransform 
-# 使用vars.to.regress参数指定对线粒体含量进行校正 
-pbmc <- SCTransform(pbmc, vars.to.regress = "percent.mt", verbose = FALSE) 
+## 过滤细胞和基因，第二种方法
+### step1 先看每个细胞中的参数比例
+pbmc <- PercentageFeatureSet(sce, pattern = "^Ercc", col.name = "percent.Ercc") 
+VlnPlot(pbmc, features = c("nFeature_RNA", "nCount_RNA","percent.Ercc"), ncol = 3)
+### step2 based on the above pic, set cutoff: nUMI >2000; ERCC<50%
+```{r}
+sce <- subset(sce, subset = nFeature_RNA > 2000 & percent.ERCC < 50)
+```
 
+### step3 clean genes; average < 1，可以不用，SCTransform可以过滤基因
+```{r}
+counts1 <- GetAssayData(object = sce, slot = "counts")
+test1=apply(counts1,1, mean)
+filtered_counts <- counts1[test1>1, ]
+sce <- CreateSeuratObject(filtered_counts, meta.data = sce@meta.data)
+```
 
+if(F){
 # QC and clean data
 ## https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html
 ## 2 pics to remove cells
@@ -86,22 +97,11 @@ qcdata %>%
         geom_hline(yintercept = 250) +
         facet_wrap(~plate)
 ```
+}
 
-### based on the above pic, set cutoff: nUMI >2000; ERCC<50%
-```{r}
-sce <- subset(sce, subset = nFeature_RNA > 2000 & percent.ERCC < 50)
-```
-
-## clean genes; average < 1
-```{r}
-counts1 <- GetAssayData(object = sce, slot = "counts")
-test1=apply(counts1,1, mean)
-filtered_counts <- counts1[test1>1, ]
-sce <- CreateSeuratObject(filtered_counts, meta.data = sce@meta.data)
-```
 # 下面三步现在可以用SCTransform来做
 - http://events.jianshu.io/p/854f7493b293
-## store mitochondrial percentage in object meta data 
+## 上面没有做percent，这里需要做
 pbmc <- PercentageFeatureSet(pbmc, pattern = "^MT-", col.name = "percent.mt") 
 ## run sctransform 
 pbmc <- SCTransform(pbmc, vars.to.regress = "percent.mt", verbose = FALSE)
