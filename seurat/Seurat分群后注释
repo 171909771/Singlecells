@@ -1,6 +1,7 @@
 https://www.jianshu.com/p/15937402b405
 
 library(SingleR)
+library("celldex")
 sce_for_SingleR <- GetAssayData(sce, slot="data")
 clusters=sce@meta.data$seurat_clusters
 
