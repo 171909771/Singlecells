@@ -66,16 +66,14 @@ scRNA2 <- merge(scRNAlist[[1]], y=c(scRNAlist[[2]], scRNAlist[[3]]))
 dim(scRNA2)   #查看基因数和细胞总数
 table(scRNA2@meta.data$orig.ident)  #查看每个样本的细胞数
 
-############################最简单的读取，单个，多个都适用
-# 创建文件夹，文件夹里面放这个数据集
+# 最简单的读取，单个，多个都适用
+## 创建文件夹，文件夹里面放这个数据集
 library(Seurat)
 samples=list.files("MCAO/")
 samples
 dir <- file.path('./MCAO',samples)
 names(dir) <- samples
 
-## 合并方法1 全部合并
-counts <- Read10X(data.dir = dir)
-scRNA1 = CreateSeuratObject(counts, min.cells=3)
-dim(scRNA1)   #查看基因数和细胞总数
-table(scRNA1@meta.data$orig.ident)  #查看每个样本的细胞数
+
+# 读取h5文件
+data2=Read10X_h5("filtered_feature_bc_matrix.h5")
