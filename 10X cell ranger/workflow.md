@@ -57,3 +57,14 @@ nohup cellranger count --id=out  \
 --nosecondary  \
 --localcores=12  \
 --localmem=28 &
+
+#### 如果是技术重复样本，用并行，先用分别建立文件夹，用find >出绝对路径
+a=1
+cat /home/chan87/tmp/123|while read id; do  ( nohup cellranger count \
+--id=out$a  \
+--transcriptome=/home/chan87/index/mm39  \
+--fastqs=${id}/ \
+--sample=${id##*/}  \
+--nosecondary  \
+--localcores=12  \
+--localmem=28  &); a=`expr $a + 1`;done
