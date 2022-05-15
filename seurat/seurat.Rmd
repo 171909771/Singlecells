@@ -99,7 +99,7 @@ qcdata %>%
 ```
 }
 
-# 下面三步现在可以用SCTransform来做
+# 下面三步现在可以用SCTransform来做,用这种方法不能选择簇JackStraw命令
 - http://events.jianshu.io/p/854f7493b293
 ## 上面没有做percent，这里需要做
 pbmc <- PercentageFeatureSet(pbmc, pattern = "^MT-", col.name = "percent.mt") 
@@ -111,13 +111,14 @@ pbmc <- SCTransform(pbmc, vars.to.regress = "percent.mt", verbose = FALSE)
 scenorm <- NormalizeData(sce, normalization.method = "LogNormalize", scale.factor = 10000)
 ```
 
+if(F){
 ### get overlaping genes,note: this filtered method is different from that paper
 ```{r}
 gs1=intersect(gs,rownames(scenorm@assays[["RNA"]]@counts))
 #just do a heatmap
 pheatmap(scenorm@assays[["RNA"]]@data[gs1,])
 ```
-
+}
 ## step2 find highly variable genes
 ```{r}
 scenormvc <- FindVariableFeatures(scenorm, selection.method = "vst", nfeatures = 2000)
