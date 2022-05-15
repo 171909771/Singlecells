@@ -1,7 +1,7 @@
 - https://mp.weixin.qq.com/s?__biz=MzI1Njk4ODE0MQ==&mid=2247484355&idx=1&sn=7860fe0c46073a55d2d3700822c3103b&scene=21#wechat_redirect
 
 # 构建注释,包含了想要的基因
-cellranger mkgtf Homo_sapiens.GRCh38.106.gtf Homo_sapiens.GRCh38.106.filtered.gtf \
+cellranger mkgtf Homo_sapiens.GRCh38.106.gtf Homo_sapiens.GRCh38.106.filtered.gtf \  ###下次只要编码蛋白基因
                 --attribute=gene_biotype:protein_coding \
                 --attribute=gene_biotype:lincRNA \
                 --attribute=gene_biotype:antisense \
