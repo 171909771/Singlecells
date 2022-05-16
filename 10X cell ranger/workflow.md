@@ -49,7 +49,7 @@ nohup cellranger count --id=out \
 ls SRR*|while read id ; do echo ${id%_*};done|uniq>txt1   # 取值每一个SRR值
 cat txt1|while read id;do mv ${id}_1.fastq.gz ${id}_S1_L00${a}_R1_001.fastq.gz;mv ${id}_2.fastq.gz ${id}_S1_L00${a}_R2_001.fastq.gz; a=`expr $a + 1` ;done    #改名
 
-### 启动cellranger
+### 启动cellranger count 生成矩阵文件
 nohup cellranger count --id=out  \
 --transcriptome=/home/chan87/index/mm39 \
 --fastqs=/home/chan87/bio.test/SRP320164/  \
@@ -68,3 +68,11 @@ cat /home/chan87/tmp/123|while read id; do  ( nohup cellranger count \
 --nosecondary  \
 --localcores=12  \
 --localmem=28  &); a=`expr $a + 1`;done
+
+### 启动cellranger aggr 合并矩阵文件
+- https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/aggregate
+- https://www.jianshu.com/p/ca726a8979d7    #中文
+#### csv文件建立
+![image](https://user-images.githubusercontent.com/41554601/168627469-90b2067c-f9d6-43a3-837e-56179ac38ea1.png)
+
+cellranger aggr --id=MySamples --csv=aggr.csv
