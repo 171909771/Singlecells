@@ -1,5 +1,6 @@
 - https://mp.weixin.qq.com/s/TJsdj7qesZGlvmEkNLAy0A
 # 生成 loom文件
+- https://velocyto.org/velocyto.py/tutorial/cli.html ####官方
 
 rmsk=/home/chan87/hg38_rmsk.gtf       #UCSC table browser 下载
 outdir=/home/chan87/out      # cellranger生成
