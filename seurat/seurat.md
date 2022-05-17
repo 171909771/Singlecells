@@ -1,11 +1,11 @@
 https://www.jianshu.com/p/a4a556578a02
 
+
+
+# 读取数据
+```
 library(pheatmap)
 library(Seurat)
-# 上面检测了 counts 和 meta 两个变量，后面需要使用
-
-```
-
 if(F){
         library(Seurat)
         # https://satijalab.org/seurat/mca.html
