@@ -1,30 +1,5 @@
 https://www.jianshu.com/p/a4a556578a02
 
----
-title: "seurat"
-author: "longlong"
-date: "2022/2/5"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-# load data
-```{r}
-rm(list = ls()) 
-Sys.setenv(R_MAX_NUM_DLLS=999)
-## 首先载入文章的数据
-load(file='../input.Rdata')
-counts=a
-# using raw counts is the easiest way to process data through Seurat.
-library(stringr) 
-meta=df
-
-# 下面的基因是文章作者给出的
-gs=read.table('top18-genes-in-4-subgroup.txt')[,1]
-
 library(pheatmap)
 library(Seurat)
 # 上面检测了 counts 和 meta 两个变量，后面需要使用
