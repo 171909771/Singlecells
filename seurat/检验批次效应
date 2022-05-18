@@ -1,0 +1,47 @@
+
+# 读取数据
+```r
+scRNAlist <- list()
+library(Seurat)
+samples=list.files("test/")
+samples
+dir <- file.path('./test',samples)
+names(dir) <- samples
+for(i in 1:length(dir)){
+  print(i)
+  counts <- Read10X(data.dir = dir[i])
+  scRNAlist[[i]] <- CreateSeuratObject(counts, min.cells=3)
+}
+```
+# 分开画PCA图
+## 归一化和标准化
+```r
+test1=lapply(scRNAlist, function(x){
+  x <- NormalizeData(x)
+  
+  x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 2000)
+  
+  all.genes <- rownames(x)
+  x <- ScaleData(x, features = all.genes)
+  x <- RunPCA(x, features = VariableFeatures(object = x))
+})
+```
+## 分别画PCA图
+```r
+lapply(test2, function(x){
+  DimPlot(x, reduction = "pca")
+})
+```
+# 一起画PCA图（会减轻一部分批次效应）
+## 合并数据
+```r
+test3=merge(x=test2[[1]],y=c(test2[[2]]))
+```
+## 标准化及归一化
+```r
+scRNA1 <- NormalizeData(test3)
+scRNA1 <- FindVariableFeatures(scRNA1, selection.method = "vst")
+scRNA1 <- ScaleData(scRNA1, features = VariableFeatures(scRNA1))
+scRNA1 <- RunPCA(scRNA1, features = VariableFeatures(scRNA1))
+plot1 <- DimPlot(scRNA1, reduction = "pca", group.by="orig.ident")
+```
