@@ -46,10 +46,12 @@ nohup cellranger count --id=out \
 ## cellranger
 
 ### 改名
+```shell
 ls SRR*|while read id ; do echo ${id%_*};done|uniq>txt1   # 取值每一个SRR值
 cat txt1|while read id;do mv ${id}_1.fastq.gz ${id}_S1_L00${a}_R1_001.fastq.gz;mv ${id}_2.fastq.gz ${id}_S1_L00${a}_R2_001.fastq.gz; a=`expr $a + 1` ;done    #改名
-
+```
 ### 启动cellranger count 生成矩阵文件
+```shell
 nohup cellranger count --id=out  \
 --transcriptome=/home/chan87/index/mm39 \
 --fastqs=/home/chan87/bio.test/SRP320164/  \
@@ -57,8 +59,9 @@ nohup cellranger count --id=out  \
 --nosecondary  \
 --localcores=12  \
 --localmem=28 &
-
+```
 #### 如果是技术重复样本，用并行，先用分别建立文件夹，用find >出绝对路径
+```shell
 a=1
 cat /home/chan87/tmp/123|while read id; do  ( nohup cellranger count \
 --id=out$a  \
@@ -68,7 +71,7 @@ cat /home/chan87/tmp/123|while read id; do  ( nohup cellranger count \
 --nosecondary  \
 --localcores=12  \
 --localmem=28  &); a=`expr $a + 1`;done
-
+```
 ### 启动cellranger aggr 合并矩阵文件
 - https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/aggregate
 - https://www.jianshu.com/p/ca726a8979d7    #中文
