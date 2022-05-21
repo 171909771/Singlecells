@@ -3,7 +3,7 @@ https://www.jianshu.com/p/a4a556578a02
 
 
 # 读取数据
-```
+```r
 library(pheatmap)
 library(Seurat)
 if(F){
@@ -18,11 +18,12 @@ if(F){
                                   project = "sce")
         # 参考：https://github.com/satijalab/seurat/issues/668
 }
-
+```
 # 正式开始！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 #  load data into seurat 
 ## 过滤细胞和基因，第一种方法
 ```{r}
+counts <- Read10X(data.dir = "./")
 sce <- CreateSeuratObject(counts = counts, 
                           meta.data =meta,
                           min.cells = 5, #每个基因最低表达的细胞量
