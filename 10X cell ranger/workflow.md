@@ -77,6 +77,7 @@ cat /home/chan87/tmp/123|while read id; do  ( nohup cellranger count \
 - https://www.jianshu.com/p/ca726a8979d7    #中文
 #### csv文件建立
 ![image](https://user-images.githubusercontent.com/41554601/168627469-90b2067c-f9d6-43a3-837e-56179ac38ea1.png)
+##### --nosecondary不加它要报错，网上说是内存不够
 ```shell
 nohup cellranger aggr --id=merge --csv=merge.csv --nosecondary --localcores=14 --localmem=30 &
 ```
