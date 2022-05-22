@@ -75,6 +75,7 @@ cat /home/chan87/tmp/123|while read id; do  ( nohup cellranger count \
 ### 启动cellranger aggr 合并矩阵文件
 - https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/aggregate
 - https://www.jianshu.com/p/ca726a8979d7    #中文
+#### aggr就是把所有矩阵进行并排合并，然后打上序号（eg：.1，.2，.3·······）
 #### csv文件建立
 ![image](https://user-images.githubusercontent.com/41554601/168627469-90b2067c-f9d6-43a3-837e-56179ac38ea1.png)
 ##### --nosecondary不加它要报错，网上说是内存不够
