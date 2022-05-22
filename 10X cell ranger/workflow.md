@@ -78,4 +78,6 @@ cat /home/chan87/tmp/123|while read id; do  ( nohup cellranger count \
 #### csv文件建立
 ![image](https://user-images.githubusercontent.com/41554601/168627469-90b2067c-f9d6-43a3-837e-56179ac38ea1.png)
 
-cellranger aggr --id=MySamples --csv=aggr.csv
+cellranger aggr --id=merge --csv=merge.csv
+[merge.csv](https://github.com/171909771/Singlecells/files/8749018/merge.csv)
+
