@@ -80,5 +80,7 @@ cat /home/chan87/tmp/123|while read id; do  ( nohup cellranger count \
 ```shell
 cellranger aggr --id=merge --csv=merge.csv
 ```
-[merge.csv](https://github.com/171909771/Singlecells/files/8749018/merge.csv)
+##### 注意，一定要保存UTF8文件格式csv
+[merge.csv](https://github.com/171909771/Singlecells/files/8749047/merge.csv)
+
 
