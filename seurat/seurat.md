@@ -33,13 +33,14 @@ sce <- CreateSeuratObject(counts = counts,
 
 ## 过滤细胞和基因，第二种方法
 ### step1 先看每个细胞中的参数比例
+```r
 pbmc <- PercentageFeatureSet(sce, pattern = "^Ercc", col.name = "percent.Ercc") 
 VlnPlot(pbmc, features = c("nFeature_RNA", "nCount_RNA","percent.Ercc"), ncol = 3)
+```
 ### step2 based on the above pic, set cutoff: nUMI >2000; ERCC<50%
 ```{r}
 sce <- subset(sce, subset = nFeature_RNA > 2000 & percent.ERCC < 50)
 ```
-
 ### step3 clean genes; average < 1，可以不用，SCTransform可以过滤基因
 ```{r}
 counts1 <- GetAssayData(object = sce, slot = "counts")
