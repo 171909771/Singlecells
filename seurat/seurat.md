@@ -137,16 +137,17 @@ DimHeatmap(PCAdata1, dims = 1:4, cells = 691, balanced = TRUE,ncol=2)
 ```
 ## 如果有批次效应，可以参考CCA，但是生物学差异也被抹平
 - http://www.360doc.com/content/21/0805/00/76149697_989558460.shtml
-# determine the dim
+
 ## 用SCTransform就可以不用确定dim，后面直接用高PCA值（30，50），效果一样
 ```{r}
+if(F){
 ddim1 <- JackStraw(PCAdata1, num.replicate = 100)
 ddim2 <- ScoreJackStraw(ddim1, dims = 1:20)
 ##choose dim by gap,method1
 JackStrawPlot(ddim2, dims = 1:20)
 ##choose dim by gap,method2
 ElbowPlot(ddim2)
-
+}
 ##set cluster
 # 分辨率用多少 https://www.jianshu.com/p/ef28c8e723be
 
