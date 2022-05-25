@@ -170,11 +170,12 @@ tsne1 <- RunTSNE(cluster2, dims = 1:10)
 DimPlot(tsne1, reduction = "tsne")
 ```
 # 看分群后效果，以microglia为例
+```r
 genes_to_check = c("Tmem119", "Hexb", "Cx3cr1", "Sparc",
                     "P2ry12", "Cst3","Aif1")
 DotPlot(tsne1, group.by = 'RNA_snn_res.0.9',
         features = unique(genes_to_check)) + RotatedAxis()
-
+```
 
 
 # Finding differentially expressed features 
