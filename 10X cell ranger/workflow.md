@@ -46,6 +46,7 @@ nohup cellranger count --id=out \
 ## cellranger
 
 ### 改名
+- https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/fastq-input-multi
 ```shell
 ls SRR*|while read id ; do echo ${id%_*};done|uniq>txt1   # 取值每一个SRR值
 cat txt1|while read id;do mv ${id}_1.fastq.gz ${id}_S1_L00${a}_R1_001.fastq.gz;mv ${id}_2.fastq.gz ${id}_S1_L00${a}_R2_001.fastq.gz; a=`expr $a + 1` ;done    #改名
