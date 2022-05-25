@@ -81,6 +81,8 @@ qcdata %>%
 ## 上面没有做percent，这里需要做
 pbmc <- PercentageFeatureSet(pbmc, pattern = "^MT-", col.name = "percent.mt") 
 ## run sctransform 
+### 用这个函数可以用更高维度的PCA
+- https://www.biostars.org/p/423306/  #上面的话的解答
 pbmc <- SCTransform(pbmc, vars.to.regress = "percent.mt", verbose = FALSE)
 
 ## step1 normalization
@@ -133,9 +135,10 @@ DimPlot(PCAdata1, reduction = "pca",group.by = "g")
 ### method4
 DimHeatmap(PCAdata1, dims = 1:4, cells = 691, balanced = TRUE,ncol=2)
 ```
-# 如果有批次效应，可以参考CCA，但是生物学差异也被抹平
+## 如果有批次效应，可以参考CCA，但是生物学差异也被抹平
 - http://www.360doc.com/content/21/0805/00/76149697_989558460.shtml
 # determine the dim
+## 用SCTransform就可以不用确定dim，后面直接用高PCA值（30，50），效果一样
 ```{r}
 ddim1 <- JackStraw(PCAdata1, num.replicate = 100)
 ddim2 <- ScoreJackStraw(ddim1, dims = 1:20)
