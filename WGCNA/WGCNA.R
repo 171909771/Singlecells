@@ -232,6 +232,7 @@ if(F){
 }
 
 ## step 5 (最重要的) 模块和性状的关系
+- https://www.biostars.org/p/414257/    ## 多级分类性状的处理
 ## 这一步主要是针对于连续变量，如果是分类变量，需要转换成连续变量方可使用
 table(datTraits$subtype)
 if(T){
