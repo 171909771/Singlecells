@@ -118,6 +118,7 @@ if(T){
 # https://www.youtube.com/watch?v=6h2UMpPn2Kk 30:25
 # "unsigned" is abs(x); "signed" is scale(x) to 0-1(0.5 is nonrelated)
 if(T){
+  cor <- WGCNA::cor
   net = blockwiseModules(
     datExpr,
     power = 6,
