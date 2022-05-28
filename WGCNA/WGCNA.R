@@ -33,6 +33,23 @@ colnames(fpkm)=sapply(colnames(fpkm),function(x) strsplit(x,"_")[[1]][1])
 
 }
 
+#### 检查样本的聚类情况，有没有异常组                      
+if(F){
+datExpr0=datExpr
+sampleTree = hclust(dist(datExpr0), method = "average")
+pdf(file = "sampleClustering.pdf", width = 12, height = 9)
+par(cex = 0.6)
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
+     cex.axis = 1.5, cex.main = 2)
+# 结果可以看到，F2_221是一个异常值
+abline(h = 3e+05, col = "red") #先画一条辅助线
+### 聚类后裁枝
+clust = cutreeStatic(sampleTree, cutHeight = 3e+05, minSize = 10)
+table(clust) # 0代表切除的，1代表保留的
+keepSamples = (clust==1)
+datExpr = datExpr0[keepSamples, ]
+}
 
 # 正式开始
                 
