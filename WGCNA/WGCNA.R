@@ -251,22 +251,29 @@ if(F){
 
 ## step 5 (最重要的) 模块和性状的关系
 - https://www.biostars.org/p/414257/    ## 多级分类性状的处理
-## 这一步主要是针对于连续变量，如果是分类变量，需要转换成连续变量方可使用
-table(datTraits$subtype)
-if(T){
-# calculate correlation between groups and modules
-  nGenes = ncol(datExpr)
-  nSamples = nrow(datExpr)
-  design=model.matrix(~0+ datTraits$subtype)
-  colnames(design)=levels(as.factor(datTraits$subtype))
-  moduleColors <- labels2colors(net$colors)
-  # Recalculate MEs with color labels
-  a=moduleEigengenes(datExpr, moduleColors)
-  MEs0 = moduleEigengenes(datExpr, moduleColors)$eigengenes
-  MEs = orderMEs(MEs0); ##不同颜色的模块的ME值矩 (样本vs模块)
-  moduleTraitCor = cor(MEs, design , use = "p");
-  moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples)
   
+## 这一步主要是针对于连续变量，如果是分类变量，变换成0，1代表，如果是多分类，变换成0，1，3......，也可以按照天数变换0.3.5.6、、、、
+if(T){
+# 方法一：计算单个多分类变量
+  datTraits=model.matrix(~0+ datTraits$subtype)
+  colnames(datTraits)=levels(as.factor(datTraits$subtype))
+   
+# 方法二：计算多个多分类变量
+datTraits=read.csv("meta.csv")
+rownames(datTraits)=datTraits$ID 
+datTraits$ID=NULL
+
+
+# 用color labels重新计算MEs（Module Eigengenes:模块的第一主成分）
+moduleColors <- labels2colors(net$colors)  
+nGenes = ncol(datExpr)
+nSamples = nrow(datExpr)
+MEs0 = moduleEigengenes(datExpr, mergedColors)$eigengenes
+MEs = orderMEs(MEs0)
+moduleTraitCor = cor(MEs, datTraits, use = "p") #（这是重点）计算ME和表型相关性
+moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples)
+  
+# 绘图  
   sizeGrWindow(10,6)
   # Will display correlations and their p-values
   textMatrix = paste(signif(moduleTraitCor, 2), "\n(",
