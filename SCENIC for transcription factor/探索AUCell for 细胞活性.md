@@ -1,5 +1,6 @@
 - https://mp.weixin.qq.com/s?__biz=MzUzMTEwODk0Ng==&mid=2247493674&idx=1&sn=c5f5272b9448787542dc52d1410e91e7&scene=21#wechat_redirect
 - https://www.jianshu.com/p/c15db7c9d3c5
+- https://www.jianshu.com/p/178107710e2c #理解ACU排序
 
 # 读取GEO数据
 dat1=read.table("GSE60361_C1-3005-Expression.txt.gz",header = TRUE,row.names=1)
