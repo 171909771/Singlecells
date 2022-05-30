@@ -1,6 +1,8 @@
 ### 参考
 - https://www.jianshu.com/p/b3d26ac51c5a  原版，不能复制
 - https://developpaper.com/cell-interaction-in-single-cell-analysis-3-cellchat/ 英文版，可以复制
+
+
 ```r
 Sys.setenv(RETICULATE_PYTHON="/home/chan87/miniconda3/bin/python3") 
 library(Seurat) 
@@ -15,6 +17,7 @@ library(svglite)
 options(stringsAsFactors = FALSE) 
 
 
+- https://www.jianshu.com/p/5d6fd4561bc0  准备pbmc.rds文件
 
 pbmc3k.final <- readRDS("pbmc.rds") 
 
