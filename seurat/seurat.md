@@ -153,6 +153,7 @@ ElbowPlot(ddim2)
 
 cluster1 <- FindNeighbors(ddim2, dims = 1:20)
 cluster2 <- FindClusters(cluster1, resolution = seq(0.5,1.2,by=0.1))
+library("clustree")
 clustree(cluster2)
 # 可以把这个参数加入到seurat数据中
 Idents(object = pbmc) <- "RNA_snn_res.0.3"
