@@ -1,0 +1,53 @@
+library(Seurat)
+data <- Read10X(data.dir = './')
+sce = CreateSeuratObject(counts = data)
+## 取想要的组
+if(F){
+sce=sce[,grepl("-2$",colnames(sce))]
+}
+ercc=rownames(sce)[grep("^ercc",rownames(sce),ignore.case = T)]
+ercc=substr(ercc[1],0,4)
+pbmc <- PercentageFeatureSet(sce, pattern = ercc, col.name = "percent.Ercc")
+VlnPlot(pbmc, features = c("nFeature_RNA", "nCount_RNA","percent.Ercc"), ncol = 3)
+sce <- subset(pbmc, subset = nFeature_RNA <6000 & percent.Ercc < 0.3)
+scenorm <- NormalizeData(sce, normalization.method = "LogNormalize", scale.factor = 10000)
+scenormvc <- FindVariableFeatures(scenorm, selection.method = "vst", nfeatures = 2000)
+all.genes <- rownames(scenormvc)
+scaledata1 <- ScaleData(scenormvc, features = all.genes)
+PCAdata1 <- RunPCA(scaledata1, features = VariableFeatures(object = scaledata1))
+ddim1 <- JackStraw(PCAdata1, num.replicate = 100)
+ddim2 <- ScoreJackStraw(ddim1, dims = 1:20)
+JackStrawPlot(ddim2, dims = 1:20)
+ElbowPlot(ddim2)
+# 确定PCA 的维度
+dim_n=14
+cluster1 <- FindNeighbors(ddim2, dims = 1:dim_n)
+cluster2 <- FindClusters(cluster1, resolution = seq(0.5,1.2,by=0.1))
+library("clustree")
+clustree(cluster2)
+# 可以把这个参数加入到seurat数据中
+Idents(object = cluster2) <- "RNA_snn_res.0.6"
+umap1 <- RunUMAP(cluster2, dims = 1:dim_n)
+DimPlot(umap1, reduction = "umap")
+tsne1 <- RunTSNE(cluster2, dims = 1:dim_n)
+DimPlot(tsne1, reduction = "tsne")
+
+# 注释
+library(SingleR)
+library("celldex")
+## 确定什么去注释
+annotation=tsne1
+sce_for_SingleR <- GetAssayData(annotation, slot="data")
+clusters=annotation@active.ident
+mouseRNA <- MouseRNAseqData()
+pred.mouseRNA <- SingleR(test = sce_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.fine,
+                         clusters = clusters, de.method="wilcox",
+                         assay.type.test = "logcounts", assay.type.ref = "logcounts")
+cellType=data.frame(ClusterID=levels(clusters),mouseRNA=pred.mouseRNA$labels)
+# 可视化看注释效果
+plotScoreHeatmap(pred.mouseRNA, clusters=pred.mouseRNA@rownames, fontsize.row = 9,show_colnames = T)
+new.cluster.ids <- pred.mouseRNA$labels
+names(new.cluster.ids) <- levels(annotation)
+annotation1 <- RenameIdents(annotation,new.cluster.ids)
+# 改相应的分布名称TSNE OR UMAP
+DimPlot(annotation1, reduction = "tsne", label = T)
