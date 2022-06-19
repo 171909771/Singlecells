@@ -32,3 +32,21 @@ new.cluster.ids <- pred.mouseRNA$pruned.labels
 names(new.cluster.ids) <- levels(sce)
 sce <- RenameIdents(sce,new.cluster.ids)
 DimPlot(sce, reduction = "tsne", label = T)
+
+# 修改分群信息
+## 提取小胶质细胞
+microglia.cells=subset(annotation1,idents ="Microglia")
+## 去up1/4的值为高表达
+five.ptpn6=fivenum(microglia.cells["Ptpn6",]@assays[["RNA"]]@data)
+fouth.ptpn6=five.ptpn6[4]
+## 提取ptpn6高表达的细胞
+up.ptpn6=subset(microglia.cells,Ptpn6>fouth.ptpn6,slot = "data")
+## 提取分群信息，output为factor
+test1=annotation.test@active.ident
+## 转换factor并修改
+test2=as.character(test1)
+names(test2)=names(test1)
+test2[colnames(up.ptpn6)]="microgliaPtpn6up"
+test3=as.factor(test2)
+## 注入回原始数据
+Idents(annotation1)=test3
