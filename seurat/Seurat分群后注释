@@ -35,6 +35,7 @@ DimPlot(sce, reduction = "tsne", label = T)
 
 # 修改分群信息
 ## 提取小胶质细胞
+- https://www.jianshu.com/p/1db7c28249d4 seurat数据结构
 microglia.cells=subset(annotation1,idents ="Microglia")
 ## 去up1/4的值为高表达
 five.ptpn6=fivenum(microglia.cells["Ptpn6",]@assays[["RNA"]]@data)
