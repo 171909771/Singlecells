@@ -1,6 +1,20 @@
 library(Seurat)
 data <- Read10X(data.dir = './')
+## 加入分组信息与否
+### 不分组
 sce = CreateSeuratObject(counts = data)
+### 分组
+if (F){
+name1=data.frame(names=colnames(data),group=substr(colnames(data),18,18))
+rownames(name1)=name1$names
+name1$names=NULL
+name1$group=gsub("1","control",name1$group)
+name1$group=gsub("2","IS",name1$group)
+name1$group=gsub("3","HS",name1$group)
+## 载入seurat
+sce = CreateSeuratObject(counts = data,meta.data = name1)
+}
+
 ## 取想要的组
 if(F){
 sce=sce[,grepl("-2$",colnames(sce))]
