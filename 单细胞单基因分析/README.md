@@ -2,7 +2,7 @@
 ------
 ```
 library(MASS)
-library(plibrary(tweedie)
+library(tweedie)
 library(statmod)
 library(pscl)
 WCL2=zeroinfl(y1~x1,dist = 'negbin')  # 零膨胀分布
