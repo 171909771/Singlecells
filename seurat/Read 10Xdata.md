@@ -43,7 +43,7 @@ lapply(unique(samples),function(x){
   file.copy(y[3],folder)
   #重命名文件
   file.rename(paste0(folder,'/',y[1]),paste0(folder,'/',str_split(y[1],'_',simplify = T)[,3]))
-  file.rename(paste0(folder,'/',y[2]),paste0(folder,'/',str_split(y[2],'_',simplify = T)[,3]))
+  file.rename(paste0(folder,'/',y[2]),paste0(folder,'/',"features.tsv.gz"))
   file.rename(paste0(folder,'/',y[3]),paste0(folder,'/',str_split(y[3],'_',simplify = T)[,3]))
 })
 ```
