@@ -79,7 +79,7 @@ AS_sham=sapply(test, function(x1){
   if (n>=100) {
     x=x[order(x$adjP,decreasing = F),]
     result.tweedie.100=head(x,100)
-    value1=dat1[rownames(result.tweedie.100),]$value
+    value1=dat1[result.tweedie.100$genename,]$value
   } else {
     value1=dat1[x$genename,]$value
     
