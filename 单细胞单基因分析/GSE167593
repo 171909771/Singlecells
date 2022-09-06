@@ -1,0 +1,203 @@
+library(Seurat)
+
+data <- Read10X(data.dir = './')
+## 加入分组信息与否
+### 不分组
+sce = CreateSeuratObject(counts = data)
+### 分组
+
+name1=data.frame(names=colnames(data),group=substr(colnames(data),18,18))
+rownames(name1)=name1$names
+name1$names=NULL
+name1$group=gsub("1","control",name1$group)
+name1$group=gsub("2","IS",name1$group)
+name1$group=gsub("3","HS",name1$group)
+## 载入seurat
+sce = CreateSeuratObject(counts = data,meta.data = name1,min.cells = 3)
+
+
+## 取想要的组
+
+sce=sce[,!grepl("-3$",colnames(sce))]
+
+ercc=rownames(sce)[grep("^ercc",rownames(sce),ignore.case = T)]
+ercc=substr(ercc[1],0,4)
+pbmc <- PercentageFeatureSet(sce, pattern = ercc, col.name = "percent.Ercc")
+mt=rownames(sce)[grep("^mt-",rownames(sce),ignore.case = T)]
+mt=substr(mt[1],0,3)
+pbmc <- PercentageFeatureSet(pbmc, pattern = mt, col.name = "percent.mt")
+
+
+VlnPlot(pbmc, features = c("nFeature_RNA", "nCount_RNA","percent.Ercc",'percent.mt'), ncol = 4)
+sce <- subset(pbmc, subset = nFeature_RNA <6000 & percent.mt<60)
+
+
+# 得到细胞周期基因
+library(homologene)
+m.s.genes <- cc.genes.updated.2019$s.genes
+m.g2m.genes <- cc.genes.updated.2019$g2m.genes
+m.s.genes.mm=homologene(m.s.genes, inTax = 9606, outTax = 10090)
+m.g2m.genes.mm=homologene(m.g2m.genes, inTax = 9606, outTax = 10090)
+s.genes=m.s.genes.mm$`10090`
+g2m.genes=m.g2m.genes.mm$`10090`
+sce <- CellCycleScoring(sce, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+sce$CC.Difference <- sce$S.Score - sce$G2M.Score
+
+# 消除周期基因影响并且归一化
+sce.list <- SplitObject(sce, split.by = "group")
+library(SeuratWrappers)
+##############方法1 ： log-normalization
+sce.list <- lapply(X = sce.list, FUN = function(x) {
+  x <- NormalizeData(x, normalization.method = "LogNormalize", scale.factor = 10000)
+  x=RunALRA(x)
+  x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 3000)
+})
+
+
+features <- SelectIntegrationFeatures(object.list = sce.list,nfeatures = 3000)
+anchors <-  FindIntegrationAnchors(object.list = sce.list, anchor.features = features)
+anchors <- IntegrateData(anchorset = anchors, dims = 1:50)
+
+###################方法2： SCTransform
+sce.list <- lapply(X = sce.list, FUN = function(x) {
+  x <- SCTransform(x, method = "glmGamPoi",vars.to.regress = 'CC.Difference',conserve.memory = TRUE)
+  x=RunALRA(x)
+})
+features <- SelectIntegrationFeatures(object.list = sce.list, nfeatures = 3000)
+sce.list <- PrepSCTIntegration(object.list = sce.list, anchor.features = features)
+sce.list <- lapply(X = sce.list, FUN = RunPCA, features = features)
+anchors <-  FindIntegrationAnchors(object.list = sce.list, normalization.method = "SCT",
+                                   anchor.features = features, dims = 1:30, reduction = "rpca", k.anchor = 20)
+sce.integrated <-IntegrateData(anchorset = anchors, normalization.method = "SCT", dims = 1:30)
+
+
+
+
+
+
+
+# 保存数据
+saveRDS(anchors,file = 'integrationALRAwithouSCT.rds')
+pbmc=readRDS('integrationALRAwithouSCT.rds')
+
+
+
+pbmc <- ScaleData(pbmc, verbose = FALSE)
+pbmc <- RunPCA(pbmc, verbose = FALSE)
+pbmc <- RunUMAP(pbmc, dims = 1:50, verbose = FALSE)
+
+pbmc <- FindNeighbors(pbmc, dims = 1:50, verbose = FALSE)
+pbmc <- FindClusters(pbmc, verbose = FALSE)
+DimPlot(pbmc, label = TRUE) + NoLegend()
+
+
+
+# 注释
+library(SingleR)
+library("celldex")
+## 确定什么去注释
+annotation=pbmc
+sce_for_SingleR <- GetAssayData(annotation, slot="data")
+clusters=annotation@active.ident
+mouseRNA <- MouseRNAseqData()
+pred.mouseRNA <- SingleR(test = sce_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.fine,
+                         clusters = clusters, de.method="wilcox",
+                         assay.type.test = "logcounts", assay.type.ref = "logcounts")
+cellType=data.frame(ClusterID=levels(clusters),mouseRNA=pred.mouseRNA$labels)
+# 可视化看注释效果
+plotScoreHeatmap(pred.mouseRNA, clusters=pred.mouseRNA@rownames, fontsize.row = 9,show_colnames = T)
+new.cluster.ids <- pred.mouseRNA$labels
+names(new.cluster.ids) <- levels(annotation)
+
+# 改变cluster名称
+if(F){
+new.cluster.ids[grepl('Cs',new.cluster.ids)]='Neuroblasts'
+new.cluster.ids[grepl('Macrophages',new.cluster.ids)]='Macrophages'
+new.cluster.ids[33]='Endothelial cells'
+new.cluster.ids[grepl('Macrophages',new.cluster.ids)]='Microglia'
+new.cluster.ids[grepl('Monocytes',new.cluster.ids)]='Microglia'
+}
+annotation1 <- RenameIdents(annotation,new.cluster.ids)
+# 改相应的分布名称TSNE OR UMAP
+DimPlot(annotation1, reduction = "umap", label = T)
+
+################fit并算平均################################################
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+
+
+
+n=4
+m=20608
+gene.mean=NULL
+totalmean2=NULL
+batch1=cut(seq(1:m),n,c(seq(1:n)))
+for (i in 1:n) {
+  gene.mean=apply(annotation1@assays[["alra"]]@data[batch1==i,],1,mean)
+  totalmean2=c(totalmean2,gene.mean)
+}
+
+gene.mean=sort(totalmean2)
+bin_ind <- ceiling(x = 1:length(x = gene.mean) / 825)    # 739 是基因数量除以分群数25
+dat1=data.frame('name'=names(gene.mean),'value'=gene.mean,'cluster'=bin_ind)
+kk=0
+for (i in c(1:25)){
+  kk=kk+mean(sample(dat1[dat1$cluster==i,]$value,size=100))
+}
+totalmean=kk/25
+
+
+##### 获得目的分群的dataframe
+types1=levels(annotation1@active.ident)
+wcl=lapply(types1, function(x){
+  
+  
+  
+  microglia.nor=subset(annotation1,idents=x)
+  microglia.nor=subset(microglia.nor,group=='control')
+  dat.microglia.nor=data.frame(microglia.nor@assays[["alra"]]@data)
+  ##### 画图看分布
+  plot(density(as.numeric(dat.microglia.nor['Ptpn6',]))  )
+  hist(as.numeric(dat.microglia.nor['Ptpn6',]))
+  ##### tweedie分布回归
+  library(MASS)
+  library(statmod)
+  library(pscl)
+  ##### 计算斜率和P值
+  y1=as.numeric(dat.microglia.nor['Ptpn6',])
+  result.tweedie=apply(dat.microglia.nor, 1, function(x){
+    
+    
+    y=glm(y1~x,family=tweedie(var.power=1.1,link.power = 0),start=c(0.5,0.5))
+    
+    y2=summary(y)
+    return(c(y2$coefficients[2],y2$coefficients[8]))})
+  
+  
+  result.tweedie=data.frame(t(result.tweedie))
+  colnames(result.tweedie)=c('slope','P-value')
+  result.tweedie$genename=rownames(result.tweedie)
+  
+  
+  ##### 算adj-p
+  result.tweedie$adjP=p.adjust(result.tweedie$`P-value`,method = 'BH')
+  result.tweedie=result.tweedie[(result.tweedie$adjP < 0.05 & result.tweedie$slope >0),]
+  result.tweedie=na.omit(result.tweedie)
+  
+  return(c(x,result.tweedie))
+ 
+})
+
+
+
+
+
+
+
+
+
+
+
+
