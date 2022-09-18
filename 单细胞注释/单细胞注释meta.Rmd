@@ -47,6 +47,9 @@ ref_sce <- SingleCellExperiment(assays=list(logcounts=assays(ref)$logcounts),
                                 colData=colData(ref), rowData=rowData(ref))
 ```
 <span style ="color:red;"> 找高变异基因 </span>
+selectFeatures是通过简单线性回归模型拟合每个基因的‘0’占比和基因表达量，然后排名最大残差来确定key features
+- https://github.com/hemberg-lab/scmap/blob/88515b5bb88c6946edde0ec750dd10efa072a4a1/R/Utils.R
+通过上面的链接来看主要代码（函数：linearModel）
 ```{r}
 ref_sce <- selectFeatures(ref_sce, suppress_plot=FALSE)
 scmap_feature_genes <- rownames(ref_sce)[which(rowData(ref_sce)$scmap_features)]
