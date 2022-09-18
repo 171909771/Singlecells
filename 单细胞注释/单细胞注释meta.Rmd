@@ -49,7 +49,7 @@ ref_sce <- SingleCellExperiment(assays=list(logcounts=assays(ref)$logcounts),
 <span style ="color:red;"> 找高变异基因 </span>
 ```{r}
 ref_sce <- selectFeatures(ref_sce, suppress_plot=FALSE)
-scmap_feature_genes <- rownames(ref_sce)[rowData(ref_sce)$scmap_features]
+scmap_feature_genes <- rownames(ref_sce)[which(rowData(ref_sce)$scmap_features)]
 ```
 加入需要的基因集
 ```{r}
