@@ -1,0 +1,105 @@
+---
+title: "Scater用法"
+author: "WCL"
+date: '2022-09-19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.加载包并且导入数据
+如果需要加载自己的数据看
+- https://bioconductor.org/packages/3.15/bioc/vignettes/SingleCellExperiment/inst/doc/intro.html
+```{r }
+suppressMessages(library(scRNAseq))
+suppressMessages(library(scater))
+example_sce <- suppressMessages(ZeiselBrainData())
+```
+
+## 2.质控
+自带ERCC质控分析
+```{r }
+example_sce <- addPerCellQC(example_sce, 
+                            subsets=list(Mito=grep("mt-", rownames(example_sce))))
+```
+不同组织中每个细胞的的counts和基因个数关系的散点图
+```{r}
+plotColData(example_sce, x = "sum", y="detected", colour_by="tissue") 
+```
+不同组织中线粒体基因所占比例的散点图
+```{r}
+plotColData(example_sce, x = "sum", y="subsets_Mito_percent", 
+    other_fields="tissue") + facet_wrap(~tissue)
+```
+表达量最高的基因的统计图
+注意：如果所有的spike-in基因都在top50中，那么表明是加了太多的spike-in了
+```{r}
+plotHighestExprs(example_sce, exprs_values = "counts")
+```
+分析coldata中不同分类中每个基因的方差
+数值越大，方差越大
+```{r}
+# 首先归一化数据
+example_sce <- logNormCounts(example_sce)
+# 计算
+vars <- getVarianceExplained(example_sce,
+    variables=c("tissue", "total mRNA mol", "sex", "age"))
+# 画图
+plotExplanatoryVariables(vars)
+```
+## 3. 看表达情况
+四种方法
+```{r collapse=T}
+plotExpression(example_sce, rownames(example_sce)[1:6], x = "level1class")
+plotExpression(example_sce, rownames(example_sce)[1:6],
+    x = rownames(example_sce)[10])
+plotExpression(example_sce, rownames(example_sce)[1:6],
+    x = "level1class", colour_by="tissue")
+plotExpression(example_sce, rownames(example_sce)[1:6])
+
+```
+## 4. 降维
+PCA，取top500方差最大的基因（ntop），出50个PCA（ncomponents），（subset_row）：可以自定义基因名字
+```{r}
+example_sce <- runPCA(example_sce)
+```
+TSNE, 默认情况下dimred为NULL， 用PCA速度更快，n_dimred为取PCA多少维度，perplexity需要不断调控
+```{r}
+example_sce <- runTSNE(example_sce, perplexity=50, 
+    dimred="PCA", n_dimred=10)
+```
+UMAP,默认情况下dimred为NULL， 用PCA速度更快，n_dimred为取PCA多少维度，不需要调perplexity
+```{r}
+example_sce <- runUMAP(example_sce,dimred="PCA", n_dimred=10)
+```
+#### 4.1 降维可视化
+任何降维都可以用的绘图，注意修改dimred（PCA,TSNE,UMAP）
+```{r}
+plotReducedDim(example_sce, dimred = "PCA", colour_by = "level1class")
+```
+其他单独绘图的命令,与上面命令相同
+```{r eval=FALSE}
+plotTSNE(example_sce, colour_by = "Snap25")
+plotPCA(example_sce, colour_by="Mog")
+plotUMAP(example_sce, colour_by="Mog")
+```
+绘制多图
+```{r}
+example_sce <- runPCA(example_sce, ncomponents=20)
+plotPCA(example_sce, ncomponents = 4, colour_by = "level1class")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
