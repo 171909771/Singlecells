@@ -8,3 +8,7 @@ Cerebro shiny 可视化
 ---
 计算cluster之间的关系，细胞周期，线粒体/核糖体占比，富集分析及GSVA，Trajectory 
 - https://romanhaa.github.io/cerebroApp/articles/cerebroApp_workflow_Seurat.html
+
+DefaultAssay
+----
+设置assay的默认栏
