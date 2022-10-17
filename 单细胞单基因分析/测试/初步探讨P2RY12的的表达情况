@@ -1,0 +1,48 @@
+# 初步探讨P2RY12的的表达情况
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+
+
+#导入数据
+
+annotation1=readRDS('annotation2.finalcluster.rds')
+
+annotation1@meta.data[["tmp"]]=annotation1@meta.data[["finalcluster"]]
+vs1=function(data=annotation1,x='Sham',y='MCAO',cluster='Microglia'){
+  #选取microglia及sham组
+  microglia.nor=subset(data,celltype.group==x & tmp==cluster)
+  microglia.mcao=subset(data,celltype.group==y & tmp==cluster)
+  
+  dat1.nor.micro=data.frame(GetAssayData(microglia.nor))
+  dat1.mcao.micro=data.frame(GetAssayData(microglia.mcao))
+  #分别对sham和mcao算每个基因的平均值及scale值
+  rowaverage1=rowMeans(dat1.nor.micro)
+  rowaverage1=data.frame(rowaverage1)
+  rowaverage1$genenames=rownames(rowaverage1)
+  sham.scalevalue=data.frame('genenames'=rowaverage1$genenames,'value'=scale(rowaverage1$rowaverage1))
+  
+  
+  rowaverage1=rowMeans(dat1.mcao.micro)
+  rowaverage1=data.frame(rowaverage1)
+  rowaverage1$genenames=rownames(rowaverage1)
+  mcao.scalevalue=data.frame('genenames'=rowaverage1$genenames,'value'=scale(rowaverage1$rowaverage1))
+  
+  data.merge=merge(mcao.scalevalue,sham.scalevalue,by='genenames',suffixes = c(".mcao",".sham"))
+  
+  data.merge$choose=data.merge$value.mcao<data.merge$value.sham
+  rownames(data.merge)=data.merge$genenames
+  output=data.merge['P2ry12',]
+  
+  rm(list=ls()[ls()!='output'])
+  gc()
+  return(output)
+}
+
+cluster=as.character(unique(annotation1@meta.data[["tmp"]]))
+cluster=cluster[cluster!='Neurons']
+
+test=sapply(cluster, function(x){
+  vs1(cluster=x)
+})
+test1=t(test)
