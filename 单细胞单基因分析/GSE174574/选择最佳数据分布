@@ -1,0 +1,26 @@
+plot(density(y1))
+
+
+# https://statisticsbyjim.com/basics/skewed-distribution/
+library(fitdistrplus)
+fitg=fitdist(y1, "gamma")
+fitw=fitdist(y1, "weibull")
+fitln <- fitdist(y1, "lnorm")
+fitlex <- fitdist(y1, WEI())
+
+
+Gamma
+Exponential
+Weibull
+Lognormal
+Beta
+
+
+summary(fitlif)
+
+cdfcomp(list(fitw, fitg, fitln), legendtext=c("Weibull", "gamma", "lognormal"))
+denscomp(list(fitw, fitg, fitln), legendtext=c("Weibull", "gamma", "lognormal"))
+qqcomp(list(fitw, fitg, fitln), legendtext=c("Weibull", "gamma", "lognormal"))
+ppcomp(list(fitw, fitg, fitln), legendtext=c("Weibull", "gamma", "lognormal"))
+#通过指标选择
+gofstat(list(fitw, fitg, fitln,fitlex), fitnames=c("Weibull", "gamma", "lognormal","Exponential"))
