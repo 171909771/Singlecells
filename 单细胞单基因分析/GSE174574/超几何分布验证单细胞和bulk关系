@@ -1,0 +1,32 @@
+BiocManager::install('mHG')
+library(mHG)
+
+p2bulk=readRDS('GSE77986_for_p2_mcao.rds')
+dat=readRDS('test.rds')
+## 得到singlecell基因集
+
+
+
+## bulk基因集处理，输入目标细胞群的数据集，获得x基因的person相关排序基因集
+blkg=function(dat,x){
+  tmp=data.frame(value=t(cor(as.numeric(dat[x,]),t(dat))))
+  tmp$genename=rownames(tmp)
+  tmp=tmp[order(tmp$value,decreasing = T),]
+  result=as.character(tmp$genename)
+}
+
+
+## 按不同bulk基因p的比例，与单细胞集top n进行超几何分析
+minhgeo=function(bulkgene,singlegene,p,n){
+bulkgene.p=bulkgene[1:round(length(bulkgene)*p*0.01)]
+singlegene.n=head(singlegene,n)
+tmp= bulkgene.p %in% singlegene.n
+result <- mHG.test(tmp)[["p.value"]]}
+
+
+
+singlegene=rownames(final.merge)
+bulkgene=blkg(dat,'P2ry12')
+test=minhgeo(bulkgene,singlegene,25,25)
+
+
