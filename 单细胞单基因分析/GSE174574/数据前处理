@@ -1,0 +1,37 @@
+# 数据转换为seurat
+
+fs=list.files('./','^GSM')
+library(tidyverse)
+samples=str_split(fs,'_',simplify = T)[,1]
+
+filename1="GSE174574/"
+lapply(unique(samples),function(x){
+  y=fs[grepl(x,fs)]
+  folder=paste0(filename1, str_split(y[1],'_',simplify = T)[,1])
+  #为每个样本创建子文件夹
+  dir.create(folder,recursive = T)
+  #移动文件
+  file.copy(y[1],folder)
+  file.copy(y[2],folder)
+  file.copy(y[3],folder)
+  #重命名文件
+  file.rename(paste0(folder,'/',y[1]),paste0(folder,'/',str_split(y[1],'_',simplify = T)[,3]))
+  file.rename(paste0(folder,'/',y[2]),paste0(folder,'/',"features.tsv.gz"))
+  file.rename(paste0(folder,'/',y[3]),paste0(folder,'/',str_split(y[3],'_',simplify = T)[,3]))
+})
+
+library(Seurat)
+samples=list.files("GSE174574/")
+samples
+dir <- file.path('./GSE174574',samples)
+names(dir) <- samples
+
+scRNAlist <- list()
+for(i in 1:length(dir)){
+  print(i)
+  counts <- Read10X(data.dir = dir[i])
+  scRNAlist[[i]] <- CreateSeuratObject(counts, min.cells=3)
+}
+scRNA2 <- merge(scRNAlist[[1]], y=c(scRNAlist[[2]], scRNAlist[[3]], scRNAlist[[4]], scRNAlist[[5]], scRNAlist[[6]]))
+dim(scRNA2)   #查看基因数和细胞总数
+table(scRNA2@meta.data$orig.ident)  #查看每个样本的细胞数
