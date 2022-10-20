@@ -6,7 +6,7 @@ library(fitdistrplus)
 fitg=fitdist(y1, "gamma")
 fitw=fitdist(y1, "weibull")
 fitln <- fitdist(y1, "lnorm")
-fitlex <- fitdist(y1, WEI())
+fitlex <- fitdist(y1, 'exp')
 
 
 Gamma
@@ -18,9 +18,9 @@ Beta
 
 summary(fitlif)
 
-cdfcomp(list(fitw, fitg, fitln), legendtext=c("Weibull", "gamma", "lognormal"))
-denscomp(list(fitw, fitg, fitln), legendtext=c("Weibull", "gamma", "lognormal"))
-qqcomp(list(fitw, fitg, fitln), legendtext=c("Weibull", "gamma", "lognormal"))
-ppcomp(list(fitw, fitg, fitln), legendtext=c("Weibull", "gamma", "lognormal"))
+cdfcomp(list(fitw, fitg, fitln,fitlex), legendtext=c("Weibull", "gamma", "lognormal","Exponential"))
+denscomp(list(fitw, fitg, fitln,fitlex), legendtext=c("Weibull", "gamma", "lognormal","Exponential"))
+qqcomp(list(fitw, fitg, fitln,fitlex), legendtext=c("Weibull", "gamma", "lognormal","Exponential"))
+ppcomp(list(fitw, fitg, fitln,fitlex), legendtext=c("Weibull", "gamma", "lognormal","Exponential"))
 #通过指标选择
 gofstat(list(fitw, fitg, fitln,fitlex), fitnames=c("Weibull", "gamma", "lognormal","Exponential"))
