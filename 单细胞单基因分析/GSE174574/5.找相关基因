@@ -162,13 +162,12 @@ return(test)
 }
 
 
-a=as.character(unique(annotation1@meta.data[["tmp"]]))
-wcl=list()
-for(i in a){
-  wcl[[i]]=correla(i)
+genetmp=as.character(unique(annotation1@meta.data[["tmp"]]))
+corlist=list()
+for(i in genetmp){
+  corlist[[i]]=correla(i)
   
 }
-
 
 
 
