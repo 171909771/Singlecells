@@ -9,3 +9,7 @@ WCL1=glm(y1~x1,family=tweedie(var.power=1.5,link.power=0))   # tweedie分布:解
 y=cpglm(y1~x,link = 'log') #tweedie分布,自动寻找var.power  library(cplm, quietly = TRUE)
 
 ```
+
+线性回归中的link function的推导
+------
+- https://www.r-bloggers.com/2018/10/generalized-linear-models-understanding-the-link-function/
