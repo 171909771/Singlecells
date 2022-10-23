@@ -1,6 +1,52 @@
 library(mHG)
 options(digits = 10)
 
+## 处理转录组数据集
+if(F){
+  ## 方法1
+library(limma)
+library(edgeR)
+## 读取数据并转换一直的变量，改变dat1名称
+dat=read.delim("GSE77986_series_matrix.txt.gz",header = T,comment.char = "!")
+# library(devtools)
+# install_github("jmzeng1314/AnnoProbe")
+library(AnnoProbe)
+gpl='GPL16570'
+## 可以更换type信息，具体查看?idmap
+probe2gene=idmap(gpl,type = 'soft', mirror = "tercent")
+head(probe2gene)
+
+## 方法2
+## 下载soft，用shell
+cat GPL22598_family.soft|grep -v '^!\|^#\|^\^' >annotation
+
+# 整理数据
+dat1=merge(dat,probe2gene,by.x="ID_REF",by.y="ID")
+dat <- aggregate(x = dat1[,2:(length(dat1)-1)],
+                 by = list(dat1$symbol),
+                 FUN = mean)
+rownames(dat)=dat$Group.1
+dat$Group.1=NULL
+
+
+library(AnnoProbe) 
+ids=annoGene( rownames(dat),'SYMBOL','mouse')
+procongene=ids$SYMBOL[ids$biotypes=='protein_coding']
+dat=dat[rownames(dat)%in%procongene,]
+
+## 看是否标准化
+boxplot(dat)
+### 如果需要
+dat=log2(dat)
+dat=data.frame(normalizeBetweenArrays(dat))
+
+
+colnames(dat)=c("WT_sham_rep1","WT_sham_rep2","WT_sham_rep3","Clec4e-/-_sham_rep1","Clec4e-/-_sham_rep2","Clec4e-/-_sham_rep3","WT_IR_rep1","WT_IR_rep2","WT_IR_rep3","WT_IR_rep4","WT_IR_rep5","Clec4e-/-_IR_rep1","Clec4e-/-_IR_rep2","Clec4e-/-_IR_rep3","Clec4e-/-_IR_rep4","Clec4e-/-_IR_rep5")
+dat6=dat[grepl("WT",colnames(dat))]
+
+
+saveRDS(dat6,file = 'GSE77986.rds')
+}
 
 p2bulk=readRDS('GSE77986.rds')
 ## 得到singlecell基因集
@@ -42,5 +88,3 @@ singlegene=genemicro  #这个是单细胞的排序基因集
 bulkgene=wcl$gene  # 转录组的排序基因集
 ## 关键步骤，统计
 test=minhgeo(bulkgene,singlegene,40,150)
-
-
