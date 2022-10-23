@@ -1,0 +1,46 @@
+library(mHG)
+options(digits = 10)
+
+
+p2bulk=readRDS('GSE77986.rds')
+## 得到singlecell基因集
+# 得到sham数据集
+dat1=p2bulk[1:3]
+# 得到MCAO数据集
+dat2=p2bulk[4:8]
+
+## 输入MCAO，sham数据及x基因，获得x基因的person相关排序基因集（已经用加法把不同数据集的相关系数相加）
+## 得到的list中的基因是排序后的基因
+blkg=function(dat1,dat2,x){
+  tmp1=data.frame(value=t(cor(as.numeric(dat1[x,]),t(dat1))))
+  tmp2=data.frame(value=t(cor(as.numeric(dat2[x,]),t(dat2))))
+  tmp1$absvalue=abs(tmp1$value)
+  tmp1$genenames=rownames(tmp1)
+  tmp2$absvalue=abs(tmp2$value)
+  tmp2$genenames=rownames(tmp2)
+  
+  
+  tmp3=merge(tmp1,tmp2,by='genenames',suffixes =c('.sham','.mcao'))
+  tmp3$comcor=tmp3$absvalue.sham+tmp3$absvalue.mcao
+  tmp3=tmp3[order(tmp3$comcor,decreasing = T),]
+  return(list(data=tmp3,gene=tmp3$genenames))
+}
+
+## 按不同bulk基因p的比例，与单细胞集top n进行超几何分析
+minhgeo=function(bulkgene,singlegene,p,n){
+  bulkgene.p=bulkgene[1:round(length(bulkgene)*p*0.01)]
+  singlegene.n=head(singlegene,n)
+  tmp= bulkgene.p %in% singlegene.n
+  result <- mHG.test(tmp)[["p.value"]]
+  cat(result)
+  return(result)}
+
+
+## 应用
+wcl=blkg(dat1,dat2,'P2ry12')
+singlegene=genemicro  #这个是单细胞的排序基因集
+bulkgene=wcl$gene  # 转录组的排序基因集
+## 关键步骤，统计
+test=minhgeo(bulkgene,singlegene,40,150)
+
+
