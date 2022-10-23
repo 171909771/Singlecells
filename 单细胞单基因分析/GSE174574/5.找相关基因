@@ -155,7 +155,7 @@ correla=function(clustername,n=100){
   test=merge(final.merge,testmcao,by='genenames')
   test=merge(test,testnor,by='genenames',suffixes = c("",".norcor"))
   
-  
+  test=test[order(test$absvalue,decreasing = T),]
   tmpdel=ls()[ls()!='test']
   gc()
   return(test)
