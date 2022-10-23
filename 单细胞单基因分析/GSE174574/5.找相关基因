@@ -136,31 +136,26 @@ correla=function(clustername,n=100){
   testnor$absvalue=abs(testnor$value)
   testnor=testnor[order(testnor$absvalue,decreasing = T),]
   
-  ## 以绝对值0.6为界进行区分，并且找sham和mcao中同时与P2相关的基因
-  genemcao=rownames(testmcao)
-  genenor=rownames(testnor)
-  p2cluster=genemcao[genemcao %in% genenor]
-  ## 取前100个
-  p2cluster100=head(p2cluster,n)
-  
-  
-  # 计算
-  final.merge=data.merge[p2cluster100,]
-  cat(clustername,"mcao:",mean(final.merge$value.mcao),'\n')
-  cat(clustername,"sham:",mean(final.merge$value.sham),'\n')
-  pva=wilcox.test(final.merge$value.mcao,final.merge$value.sham)
-  cat(clustername,'pvalue:',pva[["p.value"]],'\n')
-  
-  
-  test=merge(final.merge,testmcao,by='genenames')
+  ## 找sham和mcao中同时与P2相关的基因
+  test=merge(data.merge,testmcao,by='genenames')
   test=merge(test,testnor,by='genenames',suffixes = c("",".norcor"))
+  test$order=test$absvalue+test$absvalue.norcor
+  test=test[order(test$order,decreasing = T),]
   
-  test=test[order(test$absvalue,decreasing = T),]
-  tmpdel=ls()[ls()!='test']
+  ## 确定取top n个基因
+  test=head(test,n)
+  # 计算
+  
+  cat(clustername,"mcao:",mean(test$value.mcao),'\n')
+  cat(clustername,"sham:",mean(test$value.sham),'\n')
+  pva=wilcox.test(test$value.mcao,test$value.sham)
+  cat(clustername,'pvalue:',pva[["p.value"]],'\n')
+  rm(list=ls()[ls()!='test'])
   gc()
   return(test)
   
 }
+
 
 
 genetmp=as.character(unique(annotation1@meta.data[["tmp"]]))
