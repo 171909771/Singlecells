@@ -9,10 +9,11 @@ options (warn = -1)
 annotation1=readRDS('annotation2.finalcluster.rds')
 #cluster变成tmp名字
 annotation1@meta.data[["tmp"]]=annotation1@meta.data[["finalcluster"]]
-DimPlot(annotation1, reduction = "tsne", label = T, group.by = 'tmp')
 
+annotation1@meta.data[["celltype.group"]]=annotation1@meta.data[["orig.ident"]]
 
-
+annotation1@meta.data[["celltype.group"]][grep('Sham',ignore.case = T,annotation1@meta.data[["celltype.group"]])]='Sham'
+annotation1@meta.data[["celltype.group"]][grep('MCAO',ignore.case = T,annotation1@meta.data[["celltype.group"]])]='MCAO'
 
 
 
@@ -53,112 +54,112 @@ vs1=function(data=annotation1,x='Sham',y='MCAO',cluster='Microglia'){
 
 #找p2的相关基因
 correla=function(clustername,n=100){
-
-
-tmp=vs1(cluster=clustername)
-dat.cluster.mcao=tmp$MCAO
-dat.cluster.nor=tmp$NOR
-#每个分组中scale后的数值均值在MCAO和sham中的大小比较。
-data.merge=tmp$merge
-
-# mcao中 P2 的fit,由于太多p-value为0，故舍弃
-## 理论基础 https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6191982/#__ffn_sectitle
-if(F){
-  library(MASS)
-  library(statmod)
-  library(pscl)
-  ###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene
+  
+  
+  tmp=vs1(cluster=clustername)
+  dat.cluster.mcao=tmp$MCAO
+  dat.cluster.nor=tmp$NOR
+  #每个分组中scale后的数值均值在MCAO和sham中的大小比较。
+  data.merge=tmp$merge
+  
+  # mcao中 P2 的fit,由于太多p-value为0，故舍弃
+  ## 理论基础 https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6191982/#__ffn_sectitle
+  if(F){
+    library(MASS)
+    library(statmod)
+    library(pscl)
+    ###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene
+    y1=as.numeric(dat.cluster.mcao['P2ry12',])
+    plot(density(y1))
+    ##确认因变量的分布
+    result.tweedie=apply(dat.cluster.mcao, 1, function(x){
+      y=glm(y1~x,family=gaussian)
+      y=summary(y)
+      return(c(y$coefficients[2],y$coefficients[8],y$aic))
+    })
+    
+    
+    result.tweedie=data.frame(t(result.tweedie))
+    colnames(result.tweedie)=c('slope','P-value','AIC')
+    result.tweedie$genename=rownames(result.tweedie)
+    ### 算adj-p
+    result.tweedie$adjP=p.adjust(result.tweedie$`P-value`,method = 'BH')
+    result.tweedie=result.tweedie[(result.tweedie$adjP < 0.001),]
+    result.tweedie=na.omit(result.tweedie)
+    ### 整理数据
+    result.tweedie=result.tweedie[order(result.tweedie$adjP,result.tweedie$AIC,decreasing = c(FALSE, F)),]
+    
+    
+    genemcao=result.tweedie$genename
+    ###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene
+    y1=as.numeric(dat.cluster.nor['P2ry12',])
+    plot(density(y1))
+    ##确认因变量的分布
+    result.tweedie=apply(dat.cluster.nor, 1, function(x){
+      y=glm(y1~x,family=gaussian)
+      y=summary(y)
+      return(c(y$coefficients[2],y$coefficients[8],y$aic))
+    })
+    
+    
+    result.tweedie=data.frame(t(result.tweedie))
+    colnames(result.tweedie)=c('slope','P-value','AIC')
+    result.tweedie$genename=rownames(result.tweedie)
+    ### 算adj-p
+    result.tweedie$adjP=p.adjust(result.tweedie$`P-value`,method = 'BH')
+    result.tweedie=result.tweedie[(result.tweedie$adjP < 0.001),]
+    result.tweedie=na.omit(result.tweedie)
+    ### 整理数据
+    result.tweedie=result.tweedie[order(result.tweedie$adjP,result.tweedie$AIC,decreasing = c(FALSE, F)),]
+    
+    
+    genenor=result.tweedie$genename
+    
+  }
+  
+  
+  # 找P2相关性基因
   y1=as.numeric(dat.cluster.mcao['P2ry12',])
   plot(density(y1))
-  ##确认因变量的分布
-  result.tweedie=apply(dat.cluster.mcao, 1, function(x){
-    y=glm(y1~x,family=gaussian)
-    y=summary(y)
-    return(c(y$coefficients[2],y$coefficients[8],y$aic))
-  })
+  y2=as.numeric(dat.cluster.nor['P2ry12',])
+  plot(density(y2))
+  
+  testmcao=cor(y1,t(dat.cluster.mcao))
+  testmcao=data.frame(value=t(testmcao))
+  testmcao$genenames=rownames(testmcao)
+  testmcao$absvalue=abs(testmcao$value)
+  testmcao=testmcao[order(testmcao$absvalue,decreasing = T),]
+  
+  testnor=cor(y2,t(dat.cluster.nor))
+  testnor=data.frame(value=t(testnor))
+  testnor$genenames=rownames(testnor)
+  testnor$absvalue=abs(testnor$value)
+  testnor=testnor[order(testnor$absvalue,decreasing = T),]
+  
+  ## 以绝对值0.6为界进行区分，并且找sham和mcao中同时与P2相关的基因
+  genemcao=rownames(testmcao)
+  genenor=rownames(testnor)
+  p2cluster=genemcao[genemcao %in% genenor]
+  ## 取前100个
+  p2cluster100=head(p2cluster,n)
   
   
-  result.tweedie=data.frame(t(result.tweedie))
-  colnames(result.tweedie)=c('slope','P-value','AIC')
-  result.tweedie$genename=rownames(result.tweedie)
-  ### 算adj-p
-  result.tweedie$adjP=p.adjust(result.tweedie$`P-value`,method = 'BH')
-  result.tweedie=result.tweedie[(result.tweedie$adjP < 0.001),]
-  result.tweedie=na.omit(result.tweedie)
-  ### 整理数据
-  result.tweedie=result.tweedie[order(result.tweedie$adjP,result.tweedie$AIC,decreasing = c(FALSE, F)),]
+  # 计算
+  final.merge=data.merge[p2cluster100,]
+  cat(clustername,"mcao:",mean(final.merge$value.mcao),'\n')
+  cat(clustername,"sham:",mean(final.merge$value.sham),'\n')
+  pva=wilcox.test(final.merge$value.mcao,final.merge$value.sham)
+  cat(clustername,'pvalue:',pva[["p.value"]],'\n')
   
   
-  genemcao=result.tweedie$genename
-  ###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene
-  y1=as.numeric(dat.cluster.nor['P2ry12',])
-  plot(density(y1))
-  ##确认因变量的分布
-  result.tweedie=apply(dat.cluster.nor, 1, function(x){
-    y=glm(y1~x,family=gaussian)
-    y=summary(y)
-    return(c(y$coefficients[2],y$coefficients[8],y$aic))
-  })
+  test=merge(final.merge,testmcao,by='genenames')
+  test=merge(test,testnor,by='genenames',suffixes = c("",".norcor"))
   
   
-  result.tweedie=data.frame(t(result.tweedie))
-  colnames(result.tweedie)=c('slope','P-value','AIC')
-  result.tweedie$genename=rownames(result.tweedie)
-  ### 算adj-p
-  result.tweedie$adjP=p.adjust(result.tweedie$`P-value`,method = 'BH')
-  result.tweedie=result.tweedie[(result.tweedie$adjP < 0.001),]
-  result.tweedie=na.omit(result.tweedie)
-  ### 整理数据
-  result.tweedie=result.tweedie[order(result.tweedie$adjP,result.tweedie$AIC,decreasing = c(FALSE, F)),]
+  tmpdel=ls()[ls()!='test']
+  gc()
+  return(test)
   
-  
-  genenor=result.tweedie$genename
-  
-}
-
-
-# 找P2相关性基因
-y1=as.numeric(dat.cluster.mcao['P2ry12',])
-plot(density(y1))
-y2=as.numeric(dat.cluster.nor['P2ry12',])
-plot(density(y2))
-
-testmcao=cor(y1,t(dat.cluster.mcao))
-testmcao=data.frame(value=t(testmcao))
-testmcao$genenames=rownames(testmcao)
-testmcao$absvalue=abs(testmcao$value)
-testmcao=testmcao[order(testmcao$absvalue,decreasing = T),]
-
-testnor=cor(y2,t(dat.cluster.nor))
-testnor=data.frame(value=t(testnor))
-testnor$genenames=rownames(testnor)
-testnor$absvalue=abs(testnor$value)
-testnor=testnor[order(testnor$absvalue,decreasing = T),]
-
-## 以绝对值0.6为界进行区分，并且找sham和mcao中同时与P2相关的基因
-genemcao=rownames(testmcao)
-genenor=rownames(testnor)
-p2cluster=genemcao[genemcao %in% genenor]
-## 取前100个
-p2cluster100=head(p2cluster,n)
-
-
-# 计算
-final.merge=data.merge[p2cluster100,]
-cat(clustername,"mcao:",mean(final.merge$value.mcao),'\n')
-cat(clustername,"sham:",mean(final.merge$value.sham),'\n')
-pva=wilcox.test(final.merge$value.mcao,final.merge$value.sham)
-cat(clustername,'pvalue:',pva[["p.value"]],'\n')
-
-
-test=merge(final.merge,testmcao,by='genenames')
-test=merge(test,testnor,by='genenames',suffixes = c("",".norcor"))
-
-
-tmpdel=ls()[ls()!='test']
-gc()
-return(test)
-
 }
 
 
@@ -168,12 +169,3 @@ for(i in genetmp){
   corlist[[i]]=correla(i)
   
 }
-
-
-
-
-
-
-
-
-
