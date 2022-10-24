@@ -4,8 +4,8 @@ library(patchwork)
 annotation1=readRDS('annotation1.rds')
 # 修改panglao的注释# 修改panglao的注释# 修改panglao的注释# 修改panglao的注释# 修改panglao的注释
 levels(annotation1@meta.data$panglao)[grep('Dendritic cells|Macrophages|Monocytes|Red pulp macrophages|Plasmacytoid dendritic cells',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$panglao))]='monocyte-derived cells'
+                                           ignore.case = T,
+                                           levels(annotation1@meta.data$panglao))]='monocyte-derived cells'
 
 
 levels(annotation1@meta.data$panglao)[grep('Smooth muscle cells|Pericytes|Fibroblasts|Myoepithelial cells',
@@ -47,8 +47,8 @@ levels(annotation1@meta.data$panglao)[grep('Tanycytes',
 
 # 修改scinamarker的注释 #修改scinamarker的注释# 修改scinamarker的注释 # 修改scinamarker的注释 # 修改scinamarker的注释 # 修改scinamarker的注释 
 levels(annotation1@meta.data$scinamarker)[grep('T helper(Th) cell|T helper 17(Th17) cell|Natural killer T(NKT) cell|Natural killer cell|B cell|T cell|CD8+ T cell|CD4+ T cell',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$scinamarker))]='Lymphocytes'
+                                               ignore.case = T,
+                                               levels(annotation1@meta.data$scinamarker))]='Lymphocytes'
 
 levels(annotation1@meta.data$scinamarker)[grep('Ependymal cell|Tanycyte',
                                                ignore.case = T,
@@ -113,8 +113,8 @@ levels(annotation1@meta.data$scinamarker)[grep('Endothelial cell',
 
 # 修改tmp的注释# 修改tmp的注释# 修改tmp的注释# 修改tmp的注释# 修改tmp的注释# 修改tmp的注释
 levels(annotation1@meta.data$tmp)[grep('Macrophages|Dendritic cells',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$tmp))]='monocyte-derived cells'
+                                       ignore.case = T,
+                                       levels(annotation1@meta.data$tmp))]='monocyte-derived cells'
 
 levels(annotation1@meta.data$tmp)[grep('qNSCs|aNSCs|NPCs',
                                        ignore.case = T,
@@ -144,61 +144,34 @@ levels(annotation1@meta.data$tmp)[grep('B cells|T cells|NK cells',
 
 
 ######################合并data
-DimPlot(annotation1, reduction = "tsne", label = T, group.by = 'tmp')
-dat.testmerge=data.frame(scina=annotation1@meta.data$scinamarker,panglao=annotation1@meta.data$panglao,
-                         tmp=annotation1@meta.data$tmp)
+## step1 合并cellmarker
+dat.testmerge=data.frame(scina=annotation1@meta.data$scinamarker,panglao=annotation1@meta.data$panglao)
 
-#####统计 相同率
-####改，用dunpilicated
 dat.testmerge$decision=apply(dat.testmerge, 1, function(x){
-  if(x[1]==x[2] | x[1]==x[3] |x[2]==x[3]){
-    x[4]=TRUE
-  }else{
-    x[4]=FALSE
-  }})
-
-##############重新确定细胞群
-
-annotation2=annotation1[,dat.testmerge$decision]
-
-DimPlot(annotation2, reduction = "tsne", label = T, group.by = 'scinamarker')
-
-
-dat.testmerge1=data.frame(scina=annotation2@meta.data$scinamarker,
-                         panglao=annotation2@meta.data$panglao,
-                         tmp=annotation2@meta.data$tmp)
-
-
-
-dat.testmerge1$repli=apply(dat.testmerge1,1,function(x){
-  if(x[1]==x[2] | x[1]==x[3]){
-    x[4]=x[1]
-  } 
-  else if(x[2]==x[3]){
-    x[4]=x[2]
-  }
+  length(unique(x))==1
 })
 
-ref=table(dat.testmerge1$repli)>50
+annotation1=annotation1[,dat.testmerge$decision]
 
-dat.testmerge1$ref=dat.testmerge1$repli!='neural progenitor cells'
+## step2 合并 cellmarker和reference
+dat.testmerge=data.frame(scina=annotation1@meta.data$scinamarker,tmp=annotation1@meta.data$tmp)
 
-annotation2=annotation2[,dat.testmerge1$ref]
-
-dat.testmerge1=data.frame(scina=annotation2@meta.data$scinamarker,
-                          panglao=annotation2@meta.data$panglao,
-                          tmp=annotation2@meta.data$tmp)
-
-dat.testmerge1$repli=apply(dat.testmerge1,1,function(x){
-  if(x[1]==x[2] | x[1]==x[3]){
-    x[4]=x[1]
-  } 
-  else if(x[2]==x[3]){
-    x[4]=x[2]
-  }
+dat.testmerge$decision=apply(dat.testmerge, 1, function(x){
+  length(unique(x))==1
 })
 
-ref=as.factor(dat.testmerge1$repli)
-annotation2@meta.data[["finalcluster"]]=ref
-DimPlot(annotation2, reduction = "tsne", label = T, group.by = 'finalcluster')
+annotation1=annotation1[,dat.testmerge$decision]
+
+annotation1@meta.data[["tmp"]]=droplevels(annotation1@meta.data[["tmp"]])
+
+## 整理合并后数据
+tmpname=levels(annotation1@meta.data[["tmp"]])[table(annotation1@meta.data[["tmp"]])<50]
+
+for (i in tmpname) {
+  annotation1=subset(annotation1, tmp!=c(tmpname))
+  gc()
+}
+
+annotation1@meta.data[["tmp"]]=droplevels(annotation1@meta.data[["tmp"]])
+DimPlot(annotation1, reduction = "tsne", label = T, group.by = 'tmp')
 saveRDS(annotation2,file = 'annotation2.finalcluster.rds')
