@@ -174,4 +174,4 @@ for (i in tmpname) {
 
 annotation1@meta.data[["tmp"]]=droplevels(annotation1@meta.data[["tmp"]])
 DimPlot(annotation1, reduction = "tsne", label = T, group.by = 'tmp')
-saveRDS(annotation2,file = 'annotation2.finalcluster.rds')
+saveRDS(annotation1,file = 'annotation2.finalcluster.rds')
