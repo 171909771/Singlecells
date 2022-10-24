@@ -168,7 +168,7 @@ annotation1@meta.data[["tmp"]]=droplevels(annotation1@meta.data[["tmp"]])
 tmpname=levels(annotation1@meta.data[["tmp"]])[table(annotation1@meta.data[["tmp"]])<50]
 
 for (i in tmpname) {
-  annotation1=subset(annotation1, tmp!=c(tmpname))
+  annotation1=subset(annotation1, tmp!=c(i))
   gc()
 }
 
