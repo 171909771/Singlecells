@@ -1,0 +1,245 @@
+
+suppressMessages(library(SingleR))
+suppressMessages(library(scmap))
+suppressMessages(library(dplyr))
+suppressMessages(library(SingleCellExperiment))
+suppressMessages(library(scater))
+suppressMessages(library("celldex"))
+suppressMessages(library(qusage))
+suppressMessages(library(scuttle))
+suppressMessages(library(scran))
+suppressMessages(library(Seurat))
+
+## 读取数据
+obj.merge=readRDS('mergealrafinal.rds')
+
+
+## reference 注释
+
+##############################SCMAP
+## 确定什么去注释
+
+
+
+
+mouseRNA <- MouseRNAseqData()
+ref=mouseRNA
+
+# ref的rowData中没有feature_symbol，加入下面代码
+rowData(ref)$feature_symbol <- rownames(ref)
+
+# 设定成scamp需要的格式,需要用到cell_type1
+colData(ref)$cell_type1 <- colData(ref)$label.fine
+# 导入SingleCellExperiment数据
+ref_sce <- SingleCellExperiment(assays=list(logcounts=assays(ref)$logcounts), 
+                                colData=colData(ref), rowData=rowData(ref))
+
+
+# 找变异基因，top500
+dec <- modelGeneVar(ref_sce)
+top.hvgs2 <- getTopHVGs(dec, n=500)
+top.hvgs2=top.hvgs2[top.hvgs2 %in% rownames(obj.merge)]
+# 导入数据种
+ref_sce <- setFeatures(ref_sce, features =top.hvgs2)
+# 按照cluster计算
+ref_sce <- indexCluster(ref_sce,cluster_col = "cell_type1")
+scmap_cluster_reference <- metadata(ref_sce)$scmap_cluster_index
+# 按照cell计算
+ref_sce <- scmap::indexCell(ref_sce)
+scmap_cell_reference <- metadata(ref_sce)$scmap_cell_index
+scmap_cell_metadata <- colData(ref_sce)
+
+
+query_sce <- SingleCellExperiment::SingleCellExperiment(assays=list(counts=obj.merge@assays[["alra"]]@data))
+rowData(query_sce)$feature_symbol <- rownames(query_sce)
+logcounts(query_sce)=query_sce@assays@data@listData[["counts"]]
+
+
+
+scmap_cluster_res <- scmap::scmapCluster(projection=query_sce, 
+                                         index_list=list(scmap_cluster_reference), 
+                                         threshold=0.1)
+
+par(mar=c(13, 4, 1, 0))
+barplot(table(scmap_cluster_res$combined_labs), las=2)
+# 基于cluster注释,将注释信息带回数据中UMAP
+colData(query_sce)$scmap_cluster <- scmap_cluster_res$combined_labs
+query_sce <- scater::runUMAP(query_sce)
+scater::plotReducedDim(query_sce, dimred="UMAP", colour_by="scmap_cluster")
+# 基于cell注释
+nearest_neighbours <- scmap::scmapCell(projection=query_sce, 
+                                       index_list = list(immune1 = scmap_cell_reference), 
+                                       w=10)
+
+mode_label <- function(neighbours, metadata=scmap_cell_metadata$cell_type1) {
+  freq <- table(metadata[neighbours])  #非常巧妙的统计每个query细胞的可能细胞类型，neighbours代表query每个细胞类型标号，metadata代表ref每个细胞类型
+  label <- names(freq)[which(freq == max(freq))]
+  if (length(label) > 1) {return("ambiguous")}
+  return(label)
+}
+
+scmap_cell_labs <- apply(nearest_neighbours$immune1$cells, 2, mode_label)
+colData(query_sce)$scmap_cell <- scmap_cell_labs
+par(mar=c(10, 4, 0, 0))
+barplot(table(scmap_cell_labs), las=2)
+
+scater::plotReducedDim(query_sce, dimred="UMAP", colour_by="scmap_cell")
+
+##########################singleR
+predictions <- SingleR::SingleR(test=query_sce, ref=ref, labels=ref$label.fine)
+sum(is.na(predictions$pruned.labels))
+predictions$pruned.labels[which(is.na(predictions$pruned.labels))] <- "ambiguous"
+colData(query_sce)$singleR <- predictions$pruned.labels
+par(mar=c(13, 4, 2, 0))
+barplot(table(predictions$pruned.labels), las=2)
+scater::plotReducedDim(query_sce, dimred="UMAP", colour_by="singleR")
+
+
+
+
+
+##########################reference合并注释
+annotation_columns <- c("scmap_cluster", "scmap_cell", "singleR")
+
+get_consensus_label <- function(labels){
+  labels <- labels[labels != "ambiguous"]
+  if (length(labels) == 0) {return("ambiguous")}
+  freq <- table(labels)
+  label <- names(freq)[which(freq == max(freq))]
+  if (length(label) > 1) {return("ambiguous")}
+  return(label)
+}
+
+
+colData(query_sce)$consensus_lab <- apply(colData(query_sce)[,annotation_columns], 1, get_consensus_label)
+scater::plotReducedDim(query_sce, dimred="UMAP", colour_by="consensus_lab")
+
+
+new.cluster.ids=factor(query_sce@colData@listData[["consensus_lab"]],
+                       levels = unique(query_sce@colData@listData[["consensus_lab"]]))
+
+obj.merge@meta.data$tmp=new.cluster.ids
+DimPlot(obj.merge, reduction = "tsne", label = T, group.by = 'tmp')
+
+
+rm(list=ls()[ls()!='obj.merge'])
+gc()
+```
+
+## marker 注释 for scina
+##### cellmarker 的ref制作
+```r
+############################scina
+
+
+library(readxl)
+# http://yikedaxue.slwshop.cn/download.php 下载地址
+dat1=read_excel('Cell_marker_All.xlsx')
+dat2=subset(dat1,Species=='Mouse' & `Tissue class` == 'Brain' & `Cancer type`=='Normal')
+
+
+dat3=dat2[c('Cell name','Marker')]
+dat3$Marker=tolower(dat3$Marker)
+library(Hmisc)
+dat3$Marker=capitalize(dat3$Marker)
+list1= split(dat3, dat3$`Cell name`)
+list2=lapply(list1, function(x){
+  x$Marker})
+
+list3=lapply(list2, function(x){
+  if(length(x)>3){
+    return(x)
+  }})
+
+
+##如果list中每个项目过大，用下面函数，sinca不能过大，
+##自己的方法，通过基因的出现率对其进行筛选
+list3=lapply(list3, function(x){
+  if(length(x)>500){
+    y=table(x)
+    y=sort(y,decreasing = T)
+    y=y[y>1]
+    x=names(y)
+  }else{
+    return(x)
+  }
+})
+
+
+## 去除NULL
+list3=Filter(Negate(is.null), list3)
+
+exprMatrix <- as.matrix(Seurat::GetAssayData(obj.merge))
+
+# 关键步骤
+predictions.scina = SCINA::SCINA(exp = exprMatrix, signatures = list3,
+                                 rm_overlap = F, allow_unknown = TRUE)
+
+# 导入数据
+obj.merge@meta.data$scinamarker=factor(predictions.scina[["cell_labels"]],
+                                       levels = unique(predictions.scina[["cell_labels"]]))
+rm(list=ls()[ls()!='obj.merge'])
+gc()
+```
+
+##### panglao的ref制作
+```r
+# https://panglaodb.se/markers.html?cell_type=%27choose%27
+ref1=read.delim('PanglaoDB_markers_27_Mar_2020.tsv.gz')
+# 从数据库中提取脑白质成分
+ref2=subset(ref1,organ=='Brain' 
+            |organ=='Brain'
+            |organ=='Immune system'
+            |organ=='Smooth muscle'
+            |organ=='Vasculature'
+            |organ=='Connective tissue')
+ref2=ref2[grep('mm',ignore.case = T,ref2$species),]
+dat3=ref2[c('cell.type','official.gene.symbol')]
+names(dat3)=c('Cell name','Marker')
+dat3$Marker=tolower(dat3$Marker)
+library(Hmisc)
+dat3$Marker=capitalize(dat3$Marker)
+list1= split(dat3, dat3$`Cell name`)
+list2=lapply(list1, function(x){
+  x$Marker
+  
+})
+
+
+
+list3=lapply(list2, function(x){
+  if(length(x)>3){
+    return(x)
+  }
+  
+})
+## 去除NULL
+list3=Filter(Negate(is.null), list3)
+
+##如果list中每个项目过大，用下面函数
+list3=lapply(list3, function(x){
+  if(length(x)>500){
+    y=table(x)
+    y=sort(y,decreasing = T)
+    y=y[y>1]
+    x=names(y)
+  }else{
+    return(x)
+  }
+})
+
+
+exprMatrix <- as.matrix(Seurat::GetAssayData(obj.merge))
+
+# 关键步骤
+predictions.scina = SCINA::SCINA(exp = exprMatrix, signatures = list3,
+                                 rm_overlap = F, allow_unknown = TRUE)
+
+# 导入数据
+obj.merge@meta.data$panglao=factor(predictions.scina[["cell_labels"]],
+                                   levels = unique(predictions.scina[["cell_labels"]]))
+
+rm(list=ls()[ls()!='obj.merge'])
+gc()
+saveRDS(obj.merge,file='annotation1.rds')
+```
