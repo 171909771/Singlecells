@@ -1,0 +1,30 @@
+## 按照cluster进行注释的一种方法
+
+# install.packages("scCATCH")
+
+library(Seurat)
+library(scCATCH)
+
+###1.创建scCATCH的数据
+#### 读取数据信息和cluster信息
+tmp=createscCATCH(obj.merge@assays[["alra"]]@data,as.character(obj.merge@meta.data[["seurat_clusters"]]))
+
+###2.找基因
+clu_markers <- findmarkergene(tmp,
+                               species = "Mouse",
+                               cluster = 'All',
+                               marker=cellmatch, 
+                               cancer = "Normal",
+                               tissue = 'Brain',
+                               use_method = "2",  # 用目标群和其他群的集合进行比较，相对快点；如果为1，就是分其他群分别进行比较，很慢
+                               cell_min_pct = 0.25,
+                               logfc = 0.25,
+                               pvalue = 0.05)
+###3.得到群注释的相关信息
+obj <- findcelltype(clu_markers)
+###4.改变cluster的名称
+new.cluster.ids <- obj@celltype[["cell_type"]]
+names(new.cluster.ids) <-obj@celltype[["cluster"]]
+obj.merge <- RenameIdents(obj.merge, new.cluster.ids)
+###4.看效果
+DimPlot(obj.merge, reduction = "tsne", label = TRUE, pt.size = 0.5) + NoLegend()
