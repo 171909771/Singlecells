@@ -1,0 +1,45 @@
+---
+title: "sankey图"
+author: "WCL"
+date: '2022-10-29'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(warn = -1)
+```
+
+# sankey图
+- https://cloud.tencent.com/developer/article/1675189
+```{r}
+# BiocManager::install('networkD3')
+library(networkD3)
+library(dplyr)
+```
+## 载入数据
+```{r}
+load('tmp.RData')
+print(head(test))
+test1 <- group_by(test,identical2,nativegene)%>% summarise(., count = n())  # n()计算出现的次数
+print(head(test1))
+test2 <- test1
+# 改target名字，让其与前面的预测名字不一样
+test2$nativegene=paste('F',test2$nativegene,sep = '-')
+# 前处理，创建一个包含target(nativegene)，perediction(identical2)，count和flowname（perediction的name）的dataframe，再创建一个所有的编号对应名字dataframe
+disnames <- unique(c(test2$nativegene,test2$identical2))
+disnames <- data.frame(name=disnames)
+## 这里注意，数据中的编号要比
+test2$nativegene <- match(test2$nativegene, disnames$name)-1
+test2$identical2 <- match(test2$identical2, disnames$name)-1
+test2 <- as.data.frame(test2,stringsAsFactors = T)
+test2$flowname <- test1$identical2
+print(head(test2))  ##1 主要data
+print(head(disnames))   ##2 主要data
+
+## 出图
+sankeyNetwork(Links = test2, Nodes = disnames, Source = "identical2",
+              Target = "nativegene", Value = "count", NodeID = "name", 
+              LinkGroup="flowname",units = "TWh", fontSize = 12, nodeWidth = 30,
+              colourScale=JS("d3.scaleOrdinal(d3.schemeCategory10);"))
+```
