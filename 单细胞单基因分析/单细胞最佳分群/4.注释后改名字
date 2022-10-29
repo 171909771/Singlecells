@@ -1,0 +1,79 @@
+
+
+
+################改名字
+## scamp cluster
+scampcluster=query_sce@colData@listData[["scmap_cluster"]]
+scampcluster=gsub("qNSCs" ,"neural progenitor cells",scampcluster)
+scampcluster=gsub("Cardiomyocytes|Fibroblasts activated|Fibroblasts" ,"Perivascular cells",scampcluster)
+scampcluster=gsub("Macrophages" ,"Macrophages",scampcluster)
+unique(scampcluster)
+
+## scmap_cell
+scampcell=query_sce@colData@listData[["scmap_cell"]]
+scampcell=gsub("qNSCs" ,"neural progenitor cells",scampcell)
+scampcell=gsub("Cardiomyocytes|Fibroblasts activated|Fibroblasts" ,"Perivascular cells",scampcell)
+scampcell=gsub("Macrophages" ,"Macrophages",scampcell)
+unique(scampcell)
+
+## singleR_cell
+singleRcell=query_sce@colData@listData[["singleR_cell"]]
+singleRcell=gsub("NPCs|aNSCs|qNSCs" ,"neural progenitor cells",singleRcell)
+singleRcell=gsub("Cardiomyocytes|Fibroblasts activated|Fibroblasts" ,"Perivascular cells",singleRcell)
+singleRcell=gsub("Macrophages" ,"Macrophages",singleRcell)
+unique(singleRcell)
+
+## cellmarker
+cellmarkergene=predictions.scina[["cell_labels"]]
+cellmarkergene[grep('neuron',ignore.case = T,cellmarkergene)]='Neurons'
+cellmarkergene=gsub("Chandelier cell|CCK basket cell|Dentate gyrus granule cell|Long-projecting GABAergic cell|Martinotti cell|Basket cell|Cajal-Retzius cell" ,"Neurons",cellmarkergene)
+cellmarkergene=gsub("Neuroblast|Activated neural stem cell" ,"neural progenitor cells",cellmarkergene)
+cellmarkergene=gsub("Astrocyte" ,"Astrocytes",cellmarkergene)
+cellmarkergene=gsub("Oligodendrocyte" ,"Oligodendrocytes",cellmarkergene)
+cellmarkergene=gsub("Smooth muscle cell|Mural cell" ,"Perivascular cells",cellmarkergene)
+cellmarkergene=gsub("Endothelial cell" ,"Endothelial cells",cellmarkergene)
+cellmarkergene=gsub("Plasmacytoid dendritic cell.pDC." ,"Dendritic cells",cellmarkergene)
+cellmarkergene=gsub("Ependymal cell" ,"Ependymal cells",cellmarkergene)
+cellmarkergene=gsub("T helper.Th. cell" ,"Lymphocytes",cellmarkergene)
+cellmarkergene=gsub("Microglial cell" ,"Microglia",cellmarkergene)
+unique(cellmarkergene)
+
+## panglao
+panglaogene=predictions.scina.laopo[["cell_labels"]]
+
+panglaogene[grep('neuron',ignore.case = T,panglaogene)]='Neurons'
+panglaogene[grep('T |B |Plasma cells|NK cells',ignore.case = F,panglaogene)]='Lymphocytes'
+panglaogene[grep("Eosinophils|Neutrophils|Basophils",ignore.case = F,panglaogene)]='Granular cells'
+panglaogene=gsub("Neuroblasts|Neural stem|neural progenitor cells/precursor cells" ,"neural progenitor cells",panglaogene)
+panglaogene=gsub("Endothelial cells .aorta." ,"Endothelial cells",panglaogene)
+panglaogene=gsub("Tanycytes" ,"Ependymal cells",panglaogene)
+panglaogene=gsub("Pyramidal cells|Cajal-Retzius cells|Granular cells|Pinealocytes" ,"Neurons",panglaogene)
+panglaogene=gsub("Pericytes|Vascular smooth muscle cells|Myoepithelial cells" ,"Perivascular cells",panglaogene)
+panglaogene=gsub("Plasmacytoid dendritic cells|Dendritic cells" ,"Dendritic cells",panglaogene)
+panglaogene=gsub("Macrophages" ,"Macrophages",panglaogene)
+unique(panglaogene)
+
+## 固有分类
+nativegene=obj.merge@meta.data[["subclass"]]
+nativegene[grep('^L',nativegene)]='Neurons'
+nativegene=gsub("Sncg|Vip|Sst Chodl|Sst|Pvalb|Car3|CR" ,"Neurons",nativegene)
+nativegene=gsub("Oligo" ,"Oligodendrocytes",nativegene)
+nativegene=gsub("Astro" ,"Astrocytes",nativegene)
+nativegene=gsub("SMC-Peri|VLMC" ,"Perivascular cells",nativegene)
+nativegene=gsub("Endo" ,"Endothelial cells",nativegene)
+unique(nativegene)
+
+
+############################################按照固有分类改名字
+
+scampcluster=gsub("Macrophages|Microglia" ,"Micro-PVM",scampcluster)
+scampcell=gsub("Macrophages|Microglia" ,"Micro-PVM",scampcell)
+singleRcell=gsub("Macrophages|Microglia" ,"Micro-PVM",singleRcell)
+cellmarkergene=gsub("Macrophages|Microglia" ,"Micro-PVM",cellmarkergene)
+panglaogene=gsub("Macrophages|Microglia" ,"Micro-PVM",panglaogene)
+
+
+
+data1=data.frame("scampcluster"=scampcluster, "scampcell"=scampcell, 
+                 "singleRcell"=singleRcell, "cellmarkergene"=cellmarkergene, 
+                 "panglaogene"=panglaogene, "nativegene"=nativegene)
