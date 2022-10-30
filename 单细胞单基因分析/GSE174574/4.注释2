@@ -1,6 +1,3 @@
-
-
-
 ################改名字
 
 ## scmap_cell
@@ -44,3 +41,43 @@ unique(cellmarkergene)
 
 
 data1=data.frame("scampcell"=scampcell, "singleRcell"=singleRcell, "cellmarkergene"=cellmarkergene)
+
+
+## 组合的合并函数
+get_consensus_label <- function(labels){
+  labels <- labels[labels != "ambiguous"]
+  if (length(labels) == 0) {return("ambiguous")}
+  freq <- table(labels)
+  label <- names(freq)[which(freq == max(freq))]
+  if (length(label) > 1) {return("ambiguous")}
+  return(label)
+}
+
+tmp=apply(data1,1, get_consensus_label)
+
+obj.merge@meta.data$finalcluster=factor(tmp,levels = unique(tmp))
+
+## 获得最后的数据
+obj.mergef=subset(obj.merge,finalcluster!='ambiguous')
+obj.mergef@meta.data$finalcluster=droplevels(obj.mergef@meta.data$finalcluster)
+
+saveRDS(obj.mergef,file='finalcluster.rds')
+
+
+
+# 整合数据
+obj.mergef=readRDS('finalcluster.rds')
+## 分组
+obj.mergef@meta.data$celltype.group=substring(obj.mergef@meta.data[["orig.ident"]],1,4)
+## 提取大于50的细胞的cluster
+clusterremain=unique(obj.mergef@meta.data$finalcluster)[table(obj.mergef@meta.data$finalcluster)>50]
+Idents(obj.mergef) <- obj.mergef@meta.data[["finalcluster"]]
+obj.mergef1=subset(x = obj.mergef, idents =clusterremain)
+obj.mergef1@meta.data[["tmp"]]=droplevels(obj.mergef1@meta.data[["finalcluster"]])
+
+rm(list=ls()[ls()!='obj.mergef1'])
+gc()
+saveRDS(obj.mergef1,file='prunnedfinalcluster.rds')
+
+
+
