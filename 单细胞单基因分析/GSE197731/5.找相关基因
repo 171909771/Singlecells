@@ -5,7 +5,7 @@ options (warn = -1)
 
 #导入数据
 
-annotation1=obj.mergef1
+annotation1<- obj.mergef1
 # annotation1=readRDS('prunnedfinalcluster.rds')
 
 #比较sham组及mcao组
@@ -44,7 +44,7 @@ vs1=function(data=annotation1,x='Sham',y='MCAO',cluster='Microglia'){
 
 
 #找p2的相关基因
-correla=function(clustername,n=100){
+correla=function(clustername){
   
   
   tmp=vs1(x='CON',y='IS',cluster=clustername)
@@ -53,63 +53,10 @@ correla=function(clustername,n=100){
   #每个分组中scale后的数值均值在MCAO和sham中的大小比较。
   data.merge=tmp$merge
   
-  # mcao中 P2 的fit,由于太多p-value为0，故舍弃# mcao中 P2 的fit,由于太多p-value为0，故舍弃# mcao中 P2 的fit,由于太多p-value为0，故舍弃
-  ## 理论基础 https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6191982/#__ffn_sectitle
-  if(F){
-    library(MASS)
-    library(statmod)
-    library(pscl)
-    ###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene
-    y1=as.numeric(dat.cluster.mcao['P2ry12',])
-    plot(density(y1))
-    ##确认因变量的分布
-    result.tweedie=apply(dat.cluster.mcao, 1, function(x){
-      y=glm(y1~x,family=gaussian)
-      y=summary(y)
-      return(c(y$coefficients[2],y$coefficients[8],y$aic))
-    })
-    
-    
-    result.tweedie=data.frame(t(result.tweedie))
-    colnames(result.tweedie)=c('slope','P-value','AIC')
-    result.tweedie$genename=rownames(result.tweedie)
-    ### 算adj-p
-    result.tweedie$adjP=p.adjust(result.tweedie$`P-value`,method = 'BH')
-    result.tweedie=result.tweedie[(result.tweedie$adjP < 0.001),]
-    result.tweedie=na.omit(result.tweedie)
-    ### 整理数据
-    result.tweedie=result.tweedie[order(result.tweedie$adjP,result.tweedie$AIC,decreasing = c(FALSE, F)),]
-    
-    
-    genemcao=result.tweedie$genename
-    ###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene###mcaogene
-    y1=as.numeric(dat.cluster.nor['P2ry12',])
-    plot(density(y1))
-    ##确认因变量的分布
-    result.tweedie=apply(dat.cluster.nor, 1, function(x){
-      y=glm(y1~x,family=gaussian)
-      y=summary(y)
-      return(c(y$coefficients[2],y$coefficients[8],y$aic))
-    })
-    
-    
-    result.tweedie=data.frame(t(result.tweedie))
-    colnames(result.tweedie)=c('slope','P-value','AIC')
-    result.tweedie$genename=rownames(result.tweedie)
-    ### 算adj-p
-    result.tweedie$adjP=p.adjust(result.tweedie$`P-value`,method = 'BH')
-    result.tweedie=result.tweedie[(result.tweedie$adjP < 0.001),]
-    result.tweedie=na.omit(result.tweedie)
-    ### 整理数据
-    result.tweedie=result.tweedie[order(result.tweedie$adjP,result.tweedie$AIC,decreasing = c(FALSE, F)),]
-    
-    
-    genenor=result.tweedie$genename
-    
-  }
-  # mcao中 P2 的fit,由于太多p-value为0，故舍弃# mcao中 P2 的fit,由于太多p-value为0，故舍弃# mcao中 P2 的fit,由于太多p-value为0，故舍弃  
-  
-  # 找P2相关性基因
+ 
+
+# 找P2相关性基因 ----------------------------------------------------------------
+
   y1=as.numeric(dat.cluster.mcao['P2ry12',])
   plot(density(y1))
   y2=as.numeric(dat.cluster.nor['P2ry12',])
@@ -119,23 +66,29 @@ correla=function(clustername,n=100){
   testmcao=data.frame(value=t(testmcao))
   testmcao$genenames=rownames(testmcao)
   testmcao$absvalue=abs(testmcao$value)
-  testmcao=testmcao[order(testmcao$absvalue,decreasing = T),]
+  
   
   testnor=cor(y2,t(dat.cluster.nor))
   testnor=data.frame(value=t(testnor))
   testnor$genenames=rownames(testnor)
   testnor$absvalue=abs(testnor$value)
-  testnor=testnor[order(testnor$absvalue,decreasing = T),]
   
-  ## 找sham和mcao中同时与P2相关的基因
+
+# 筛选cor 系数绝对值大于0.6 --------------------------------------------------------------------
+  testnor=subset(testnor,absvalue>0.6)
+  testmcao=subset(testmcao,absvalue>0.6)
+  
+
+# 合并数据 --------------------------------------------------------------------
   test=merge(data.merge,testmcao,by='genenames')
   test=merge(test,testnor,by='genenames',suffixes = c("",".norcor"))
   test$order=test$absvalue+test$absvalue.norcor
   test=test[order(test$order,decreasing = T),]
   
-  ## 确定取top n个基因
-  test=head(test,n)
-  # 计算
+
+
+# 计算 ----------------------------------------------------------------------
+
   
   cat(clustername,"mcao:",mean(test$value.mcao),'\n')
   cat(clustername,"sham:",mean(test$value.sham),'\n')
@@ -152,7 +105,7 @@ correla=function(clustername,n=100){
 genetmp=as.character(unique(annotation1@meta.data[["tmp"]]))
 corlist=list()
 for(i in genetmp){
-  corlist[[i]]=correla(i,200)
+  corlist[[i]]=correla(i)
   
 }
 
