@@ -1,0 +1,14 @@
+library(Seurat)
+datcon=read.csv('GSM5929213_h24_wt_con_counts.csv.gz')
+datis=read.csv('GSM5929214_h24_wt_ip_counts.csv.gz')
+rownames(datcon)=datcon$X
+datcon$X=NULL
+rownames(datis)=datis$X
+datis$X=NULL
+datcon <- CreateSeuratObject(counts = datcon, project = "CON", min.cells = 3, min.features = 200)
+datis <- CreateSeuratObject(counts = datis, project = "IS", min.cells = 3, min.features = 200)
+datcon@meta.data[["orig.ident"]]='CON'
+datis@meta.data[["orig.ident"]]='IS'
+datmerge=merge(datcon,datis)
+
+saveRDS(datmerge,file='raw1.rds')
