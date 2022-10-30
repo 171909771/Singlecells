@@ -1,0 +1,92 @@
+# 注释
+annotation <- read.csv('GSE189432_annotations.csv.gz')
+sce.list <- SplitObject(obj.merge, split.by = "orig.ident")
+
+#1
+GSM5701739=sce.list$GSM5701739
+tmpsubject.GSM5701739<- strsplit(colnames(GSM5701739),'_') %>% sapply(., tail,1) %>% strsplit(.,'-') %>% sapply(., head,1)
+
+
+annotation.ctrl_cns=subset(annotation,sample=='ctrl_cns')
+tmpref.ctrl_cns <- strsplit(annotation.ctrl_cns$barcode,'_') %>% sapply(., head,1)
+
+GSM5701739.prunned=GSM5701739[,which(tmpsubject.GSM5701739 %in% tmpref.ctrl_cns)]
+GSM5701739.prunned@meta.data$annotation=annotation.ctrl_cns$cluster
+
+
+#2
+GSM5701742=sce.list$GSM5701742
+tmpsubject.GSM5701742<- strsplit(colnames(GSM5701742),'_') %>% sapply(., tail,1) %>% strsplit(.,'-') %>% sapply(., head,1)
+
+
+annotation.stroke_cns_24h_1=subset(annotation,sample=='stroke_cns_24h_1')
+tmpref.stroke_cns_24h_1 <- strsplit(annotation.stroke_cns_24h_1$barcode,'_') %>% sapply(., head,1)
+
+GSM5701742.prunned=GSM5701742[,which(tmpsubject.GSM5701742 %in% tmpref.stroke_cns_24h_1)]
+GSM5701742.prunned@meta.data$annotation=annotation.stroke_cns_24h_1$cluster
+
+#3
+GSM5701745=sce.list$GSM5701745
+tmpsubject.GSM5701745<- strsplit(colnames(GSM5701745),'_') %>% sapply(., tail,1) %>% strsplit(.,'-') %>% sapply(., head,1)
+
+
+annotation.stroke_cns_24h_2=subset(annotation,sample=='stroke_cns_24h_2')
+tmpref.stroke_cns_24h_2 <- strsplit(annotation.stroke_cns_24h_2$barcode,'_') %>% sapply(., head,1)
+
+GSM5701745.prunned=GSM5701745[,which(tmpsubject.GSM5701745 %in% tmpref.stroke_cns_24h_2)]
+GSM5701745.prunned@meta.data$annotation=annotation.stroke_cns_24h_2$cluster
+
+#4
+GSM5701746=sce.list$GSM5701746
+tmpsubject.GSM5701746<- strsplit(colnames(GSM5701746),'_') %>% sapply(., tail,1) %>% strsplit(.,'-') %>% sapply(., head,1)
+
+
+annotation.stroke_cns_72h=subset(annotation,sample=='stroke_cns_72h')
+tmpref.stroke_cns_72h <- strsplit(annotation.stroke_cns_72h$barcode,'_') %>% sapply(., head,1)
+
+GSM5701746.prunned=GSM5701746[,which(tmpsubject.GSM5701746 %in% tmpref.stroke_cns_72h)]
+GSM5701746.prunned@meta.data$annotation=annotation.stroke_cns_72h$cluster
+
+
+# 合并
+obj.merge=merge(GSM5701739.prunned,c(GSM5701742.prunned, GSM5701745.prunned, GSM5701746.prunned), merge.dr = "integrated_dr")
+
+
+
+# 再注释 ---------------------------------------------------------------------
+clustername=obj.merge@meta.data[["annotation"]]
+
+clustername=gsub('Tc|Bc|gdTc|ILC2|NK','Lymphocytes',clustername)
+clustername=gsub('CAM_1|CAM_2|Macro_1|Macro_2|SAMC','Monocytes/Macrophages',clustername)
+clustername=gsub('Granulo_1|Granulo_2','Granulocytes',clustername)
+clustername=gsub('mDC1|mDC2','Dendritic cells',clustername)
+clustername=gsub('Micro_1|Micro_2|Micro_3|stress_Micro','Microglia',clustername)
+table(clustername)
+
+obj.merge@meta.data$tmp=factor(clustername,levels = unique(clustername))
+
+
+# 改group ------------------------------------------------------------------
+obj.merge@meta.data$celltype.group=gsub('GSM5701739','Sham',obj.merge@meta.data[["orig.ident"]]) %>% 
+  gsub('GSM5701742|GSM5701745','MCAO-24h',.) %>% gsub('GSM5701746','MCAO-72h',.) 
+
+
+
+# 画图 ----------------------------------------------------------------------
+
+
+obj.merge <- RunTSNE(obj.merge, reduction = "integrated_dr", dims = 1:30)
+DimPlot(obj.merge, reduction = "tsne", label = T, group.by = 'annotation')
+library(ggplot2)
+library(cowplot)
+library(patchwork)
+
+plots <- VlnPlot(obj.merge,slot = 'data',features = c("P2ry12"), split.by = "celltype.group", group.by = "tmp",
+                 pt.size = 0, combine = FALSE)
+wrap_plots(plots = plots, ncol = 1)
+
+
+# 保存 ----------------------------------------------------------------------
+
+
+save(obj.merge,file='annotation1.rds')
