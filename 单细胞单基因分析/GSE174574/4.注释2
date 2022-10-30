@@ -1,0 +1,46 @@
+
+
+
+################改名字
+
+## scmap_cell
+scampcell=obj.merge@meta.data[["scmap_cell"]]
+scampcell=gsub("NPCs|aNSCs" ,"neural progenitor cells",scampcell)
+scampcell=gsub("Fibroblasts|Fibroblasts activated|Cardiomyocytes|Fibroblasts senescent" ,"Perivascular cells",scampcell)
+scampcell=gsub("NK cells|T cells|B cells" ,"Lymphocytes",scampcell)
+scampcell=gsub("Monocytes|Macrophages|Macrophages activated" ,"Monocytes/Macrophages",scampcell)
+scampcell=gsub("Microglia|Microglia activated" ,"Microglia",scampcell)
+unique(scampcell)
+
+## singleR_cell
+singleRcell=obj.merge@meta.data[["singleR_cell"]]
+singleRcell=gsub("NPCs|aNSCs|qNSCs" ,"neural progenitor cells",singleRcell)
+singleRcell=gsub("Fibroblasts|Fibroblasts activated|Cardiomyocytes|Fibroblasts senescent" ,"Perivascular cells",singleRcell)
+singleRcell=gsub("Microglia|Microglia activated" ,"Microglia",singleRcell)
+singleRcell=gsub("Monocytes|Macrophages|Macrophages activated" ,"Monocytes/Macrophages",singleRcell)
+singleRcell=gsub("Ependymal" ,"Ependymal cells",singleRcell)
+singleRcell=gsub("NK cells|T cells|B cells" ,"Lymphocytes",singleRcell)
+singleRcell=gsub("Astrocytes activated" ,"Astrocytes",singleRcell)
+unique(singleRcell)
+
+## cellmarker
+cellmarkergene=obj.merge@meta.data[["scinamarker"]]
+cellmarkergene[grep('neuron',ignore.case = T,cellmarkergene)]='Neurons'
+cellmarkergene=gsub("Neurogliaform cell|Cortex layer 6 pyramidal cell|Pyramidal cell|Upper layer 2 cell|Chandelier cell|CCK basket cell|Dentate gyrus granule cell|Long-projecting GABAergic cell|Martinotti cell|Basket cell|Cajal-Retzius cell" ,"Neurons",cellmarkergene)
+cellmarkergene=gsub("Neural stem cell|Late activated neural stem cell|Neuroblast|Activated neural stem cell" ,"neural progenitor cells",cellmarkergene)
+cellmarkergene=gsub("Astrocyte" ,"Astrocytes",cellmarkergene)
+cellmarkergene=gsub("Oligodendrocyte" ,"Oligodendrocytes",cellmarkergene)
+cellmarkergene=gsub("Fibroblast|Pericyte|Smooth muscle cell|Mural cell" ,"Perivascular cells",cellmarkergene)
+cellmarkergene=gsub("Endothelial cell" ,"Endothelial cells",cellmarkergene)
+cellmarkergene=gsub("Plasmacytoid dendritic cell.pDC." ,"Dendritic cells",cellmarkergene)
+cellmarkergene=gsub("Tanycyte|Ependymal cell|Choroid plexus cell" ,"Ependymal cells",cellmarkergene)
+cellmarkergene=gsub("Natural killer cell|T cell|T helper.Th. cell|B cell" ,"Lymphocytes",cellmarkergene)
+cellmarkergene=gsub("Microglial cell|Activated microglial cell" ,"Microglia",cellmarkergene)
+cellmarkergene=gsub("Monocyte|Macrophage|Monocyte-derived macrophage|Infiltrating macrophage" ,"Monocytes/Macrophages",cellmarkergene)
+cellmarkergene=gsub("Neutrophil" ,"Granulocytes",cellmarkergene)
+cellmarkergene=gsub("Neuron-glial antigen 2.NG2. cell" ,"OPCs",cellmarkergene)
+cellmarkergene[grep('Lymphocy',ignore.case = T, cellmarkergene)]='Lymphocytes'
+unique(cellmarkergene)
+
+
+data1=data.frame("scampcell"=scampcell, "singleRcell"=singleRcell, "cellmarkergene"=cellmarkergene)
