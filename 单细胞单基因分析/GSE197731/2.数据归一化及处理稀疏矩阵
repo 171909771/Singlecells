@@ -1,0 +1,89 @@
+
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+sce.list=readRDS("raw1.rds")
+# 计算ercc比例
+mt=rownames(sce.list)[grep("^mt-",rownames(sce.list),ignore.case = T)]
+mt=substr(mt[1],0,3)
+sce.list <- PercentageFeatureSet(sce.list, pattern = mt, col.name = "percent.mt")
+# 查看表达情况
+VlnPlot(sce.list, features = c("nFeature_RNA", "nCount_RNA","percent.mt"), ncol = 3)
+# 设定表达阈值
+sce.list <- subset(sce.list, subset = nFeature_RNA <6000  & percent.mt < 15)
+
+library(AnnoProbe) 
+ids=annoGene( rownames(sce.list),'SYMBOL','mouse')
+procongene=ids$SYMBOL[ids$biotypes=='protein_coding']
+sce.list=sce.list[rownames(sce.list)%in%procongene,]
+# 根据分组信息进行拆分数据
+sce.list$orig.ident=sce.list@meta.data[["orig.ident"]]
+sce.list <- SplitObject(sce.list, split.by = "orig.ident")
+rm(list=ls()[ls()!='sce.list'])
+gc()
+
+
+
+
+
+
+
+library(SeuratWrappers)
+
+#step1 alra和校正批次效应，非常花时间
+sce.list <- lapply(X = sce.list, FUN = function(x) {
+  x <- NormalizeData(x, normalization.method = "LogNormalize", scale.factor = 10000)
+  x=RunALRA(x)
+  x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 3000)
+})
+gc()
+
+
+
+atoms.merge <- lapply(X = sce.list, FUN = function(x) {
+  x <- LeverageScoreSampling(object = x, num.cells = 5000)
+})
+
+gc()
+
+
+
+
+features <- SelectIntegrationFeatures(object.list = atoms.merge)
+
+atoms.merge <- FastRPCAIntegration(object.list = atoms.merge, dims = 1:30, normalization.method = "LogNormalize",
+                                   anchor.features = features)
+gc()
+
+atom.reduction <- "integrated_dr"
+atoms.merge <- RunUMAP(atoms.merge, reduction = atom.reduction, dims = 1:30, return.model = TRUE)
+DimPlot(atoms.merge, group.by = "orig.ident")
+gc()
+
+# 读取list
+
+sce.list <- lapply(X = sce.list, FUN = function(x) {
+  x <- IntegrateSketchEmbeddings(object = x, atom.sketch.object = atoms.merge, atom.sketch.reduction = atom.reduction,
+                                 features = features)
+})
+
+gc()
+
+
+
+
+# step2 融合
+
+
+obj.merge <- merge(sce.list[[1]], sce.list[2:length(sce.list)], merge.dr = "integrated_dr")
+rm(sce.list)
+gc()
+obj.merge <- RunTSNE(obj.merge, reduction = "integrated_dr", dims = 1:30)
+obj.merge <- FindNeighbors(obj.merge,  graph.name = "test",reduction = "integrated_dr", dims = 1:30)
+obj.merge <- FindClusters(obj.merge, graph.name = "test", resolution = 1.5)
+
+DimPlot(obj.merge, reduction = "tsne", group.by = "seurat_clusters", shuffle = TRUE, raster = FALSE)
+# 保存整合信息
+saveRDS(obj.merge,'mergealrafinal.rds')
+
+
