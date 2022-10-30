@@ -109,4 +109,4 @@ for(i in genetmp){
   
 }
 
-corlist <- readRDS('resultlist.rds')
+saveRDS(corlist,file='resultlist.rds')
