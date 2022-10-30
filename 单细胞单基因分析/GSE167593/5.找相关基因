@@ -5,19 +5,8 @@ options (warn = -1)
 
 #导入数据
 
-
-annotation1=readRDS('annotation2.finalcluster.rds')
-#cluster变成tmp名字
-annotation1@meta.data[["celltype.group"]]=annotation1@meta.data[["group"]]
-annotation1@meta.data[["celltype.group"]][grep('control',
-                                               ignore.case = T,
-                                               annotation1@meta.data[["celltype.group"]])]='Sham'
-annotation1@meta.data[["celltype.group"]][grep('IS',
-                                               ignore.case = T,
-                                               annotation1@meta.data[["celltype.group"]])]='MCAO'
-
-
-
+annotation1=obj.mergef1
+# annotation1=readRDS('prunnedfinalcluster.rds')
 
 #比较sham组及mcao组
 vs1=function(data=annotation1,x='Sham',y='MCAO',cluster='Microglia'){
@@ -64,7 +53,7 @@ correla=function(clustername,n=100){
   #每个分组中scale后的数值均值在MCAO和sham中的大小比较。
   data.merge=tmp$merge
   
-  # mcao中 P2 的fit,由于太多p-value为0，故舍弃
+  # mcao中 P2 的fit,由于太多p-value为0，故舍弃# mcao中 P2 的fit,由于太多p-value为0，故舍弃# mcao中 P2 的fit,由于太多p-value为0，故舍弃
   ## 理论基础 https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6191982/#__ffn_sectitle
   if(F){
     library(MASS)
@@ -118,7 +107,7 @@ correla=function(clustername,n=100){
     genenor=result.tweedie$genename
     
   }
-  
+  # mcao中 P2 的fit,由于太多p-value为0，故舍弃# mcao中 P2 的fit,由于太多p-value为0，故舍弃# mcao中 P2 的fit,由于太多p-value为0，故舍弃  
   
   # 找P2相关性基因
   y1=as.numeric(dat.cluster.mcao['P2ry12',])
@@ -163,6 +152,8 @@ correla=function(clustername,n=100){
 genetmp=as.character(unique(annotation1@meta.data[["tmp"]]))
 corlist=list()
 for(i in genetmp){
-  corlist[[i]]=correla(i,500)
+  corlist[[i]]=correla(i,200)
   
 }
+
+saveRDS(corlist,file='resultlist.rds')
