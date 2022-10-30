@@ -76,7 +76,7 @@ obj.merge@meta.data$celltype.group=gsub('GSM5701739','Sham',obj.merge@meta.data[
 
 
 obj.merge <- RunTSNE(obj.merge, reduction = "integrated_dr", dims = 1:30)
-DimPlot(obj.merge, reduction = "tsne", label = T, group.by = 'annotation')
+DimPlot(obj.merge, reduction = "tsne", label = T, group.by = 'tmp')
 library(ggplot2)
 library(cowplot)
 library(patchwork)
