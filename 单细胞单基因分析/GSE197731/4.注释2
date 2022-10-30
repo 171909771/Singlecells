@@ -69,8 +69,9 @@ saveRDS(obj.mergef,file='finalcluster.rds')
 obj.mergef=readRDS('finalcluster.rds')
 ## 分组
 obj.mergef@meta.data$celltype.group=substring(obj.mergef@meta.data[["orig.ident"]],1,4)
-## 提取大于50的细胞的cluster
-clusterremain=unique(obj.mergef@meta.data$finalcluster)[table(obj.mergef@meta.data$finalcluster)>50]
+## 提取每组细胞不小于5的细胞的cluster
+tmp <- table(obj.mergef@meta.data[["finalcluster"]],obj.mergef@meta.data[["celltype.group"]]) 
+clusterremain <- levels(obj.mergef@meta.data[["finalcluster"]])[rowSums(tmp>5)==2]
 Idents(obj.mergef) <- obj.mergef@meta.data[["finalcluster"]]
 obj.mergef1=subset(x = obj.mergef, idents =clusterremain)
 obj.mergef1@meta.data[["tmp"]]=droplevels(obj.mergef1@meta.data[["finalcluster"]])
