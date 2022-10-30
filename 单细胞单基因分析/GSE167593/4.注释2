@@ -1,177 +1,88 @@
-library(tidyverse)
-library(Seurat)
-library(patchwork)
-annotation1=readRDS('annotation1.rds')
-# 修改panglao的注释# 修改panglao的注释# 修改panglao的注释# 修改panglao的注释# 修改panglao的注释
-levels(annotation1@meta.data$panglao)[grep('Dendritic cells|Macrophages|Monocytes|Red pulp macrophages|Plasmacytoid dendritic cells',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$panglao))]='monocyte-derived cells'
+################改名字
+
+## scmap_cell
+scampcell=obj.merge@meta.data[["scmap_cell"]]
+scampcell=gsub("NPCs|aNSCs" ,"neural progenitor cells",scampcell)
+scampcell=gsub("Fibroblasts|Fibroblasts activated|Cardiomyocytes|Fibroblasts senescent" ,"Perivascular cells",scampcell)
+scampcell=gsub("NK cells|T cells|B cells" ,"Lymphocytes",scampcell)
+scampcell=gsub("Monocytes|Macrophages|Macrophages activated" ,"Monocytes/Macrophages",scampcell)
+scampcell=gsub("Microglia|Microglia activated" ,"Microglia",scampcell)
+unique(scampcell)
+
+## singleR_cell
+singleRcell=obj.merge@meta.data[["singleR_cell"]]
+singleRcell=gsub("NPCs|aNSCs|qNSCs" ,"neural progenitor cells",singleRcell)
+singleRcell=gsub("Fibroblasts|Fibroblasts activated|Cardiomyocytes|Fibroblasts senescent" ,"Perivascular cells",singleRcell)
+singleRcell=gsub("Microglia|Microglia activated" ,"Microglia",singleRcell)
+singleRcell=gsub("Monocytes|Macrophages|Macrophages activated" ,"Monocytes/Macrophages",singleRcell)
+singleRcell=gsub("Ependymal" ,"Ependymal cells",singleRcell)
+singleRcell=gsub("NK cells|T cells|B cells" ,"Lymphocytes",singleRcell)
+singleRcell=gsub("Astrocytes activated" ,"Astrocytes",singleRcell)
+unique(singleRcell)
+
+## cellmarker
+cellmarkergene=obj.merge@meta.data[["scinamarker"]]
+cellmarkergene[grep('neuron',ignore.case = T,cellmarkergene)]='Neurons'
+cellmarkergene=gsub("Mossy cell|Hippocampal CA1 cell|Neurogliaform cell|Cortex layer 6 pyramidal cell|Pyramidal cell|Upper layer 2 cell|Chandelier cell|CCK basket cell|Dentate gyrus granule cell|Long-projecting GABAergic cell|Martinotti cell|Basket cell|Cajal-Retzius cell" ,"Neurons",cellmarkergene)
+cellmarkergene=gsub("Early neuroblast|Rhombic lip cell|Hippocampal pyramidal precursor cell|Pan-neural stem cell|Neural stem cell|Late activated neural stem cell|Neuroblast|Activated neural stem cell" ,"neural progenitor cells",cellmarkergene)
+cellmarkergene=gsub("Astroglial cell|Astrocyte" ,"Astrocytes",cellmarkergene)
+cellmarkergene=gsub("Oligodendrocyte|Myelinating oligodendrocyte|Newly formed oligodendrocyte" ,"Oligodendrocytes",cellmarkergene)
+cellmarkergene=gsub("Fibroblast|Pericyte|Smooth muscle cell|Mural cell" ,"Perivascular cells",cellmarkergene)
+cellmarkergene=gsub("Endothelial cell" ,"Endothelial cells",cellmarkergene)
+cellmarkergene=gsub("Conventional dendritic cell 1.cDC1.|Plasmacytoid dendritic cell.pDC." ,"Dendritic cells",cellmarkergene)
+cellmarkergene=gsub("Tanycyte|Ependymal cell|Choroid plexus cell" ,"Ependymal cells",cellmarkergene)
+cellmarkergene=gsub("T helper 17.Th17. cell|Natural killer cell|T cell|T helper.Th. cell|B cell" ,"Lymphocytes",cellmarkergene)
+cellmarkergene=gsub("Border-associated macrophage|Microglial cell|Activated microglial cell" ,"Microglia",cellmarkergene)
+cellmarkergene=gsub("M1 macrophage|Monocyte|Macrophage|Monocyte-derived macrophage|Infiltrating macrophage" ,"Monocytes/Macrophages",cellmarkergene)
+cellmarkergene=gsub("Neutrophil" ,"Granulocytes",cellmarkergene)
+cellmarkergene=gsub("NG2-glia cell|Oligodendrocytes precursor cell|Neuron-glial antigen 2.NG2. cell" ,"OPCs",cellmarkergene)
+cellmarkergene[grep('Lymphocy',ignore.case = T, cellmarkergene)]='Lymphocytes'
+unique(cellmarkergene)
 
 
-levels(annotation1@meta.data$panglao)[grep('Smooth muscle cells|Pericytes|Fibroblasts|Myoepithelial cells',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$panglao))]='Perivascular cells'
+data1=data.frame("scampcell"=scampcell, "singleRcell"=singleRcell, "cellmarkergene"=cellmarkergene)
 
 
-
-levels(annotation1@meta.data$panglao)[grep('T memory cells|NK cells|T cells|Natural killer T cells|T follicular helper cells|Gamma delta T cells|Plasma cells|B cells|T regulatory cells|T helper cells',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$panglao))]='Lymphocytes'
-
-
-levels(annotation1@meta.data$panglao)[grep('Neutrophils|Basophils|Eosinophils',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$panglao))]='Granulocytes'
-
-levels(annotation1@meta.data$panglao)[grep('Glutaminergic neurons|Interneurons|Adrenergic neurons|Dopaminergic neurons|Trigeminal neurons|Pyramidal cells|Cholinergic neurons|Purkinje neurons|Cajal-Retzius cells',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$panglao))]='Neurons'
-
-
-levels(annotation1@meta.data$panglao)[grep('Neuroblasts|Neural stem/precursor cells|Immature neurons',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$panglao))]='neural progenitor cells'
-
-levels(annotation1@meta.data$panglao)[grep('Endothelial cells',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$panglao))]='Endothelial cells'
-
-levels(annotation1@meta.data$panglao)[grep('Tanycytes',
-                                           ignore.case = T,
-                                           levels(annotation1@meta.data$panglao))]='Ependymal cells'
-# 修改panglao的注释# 修改panglao的注释# 修改panglao的注释# 修改panglao的注释# 修改panglao的注释
-
-
-
-
-
-# 修改scinamarker的注释 #修改scinamarker的注释# 修改scinamarker的注释 # 修改scinamarker的注释 # 修改scinamarker的注释 # 修改scinamarker的注释 
-levels(annotation1@meta.data$scinamarker)[grep('T helper(Th) cell|T helper 17(Th17) cell|Natural killer T(NKT) cell|Natural killer cell|B cell|T cell|CD8+ T cell|CD4+ T cell',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Lymphocytes'
-
-levels(annotation1@meta.data$scinamarker)[grep('Ependymal cell|Tanycyte',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Ependymal cells'
-
-levels(annotation1@meta.data$scinamarker)[grep('Microglial cell|Disease-associated microglial cell',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Microglia'
-
-levels(annotation1@meta.data$scinamarker)[grep('Oligodendrocyte',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Oligodendrocytes'
-
-levels(annotation1@meta.data$scinamarker)[grep('Astrocyte',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Astrocytes'
-
-levels(annotation1@meta.data$scinamarker)[grep('Smooth muscle cell|Mural cell|Pericyte|Fibroblast',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Perivascular cells'
-
-levels(annotation1@meta.data$scinamarker)[grep('Foam cell|Macrophage|Dendritic cell|Monocyte|Border-associated macrophage|
-                                               Engrafted macrophage|Infiltrating macrophage|Monocyte-derived macrophage',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='monocyte-derived cells'
-
-levels(annotation1@meta.data$scinamarker)[grep('Choroid plexus cell',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Choroid plexus cells'
-
-levels(annotation1@meta.data$scinamarker)[grep('Neutrophil',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Granulocytes'
-
-levels(annotation1@meta.data$scinamarker)[grep('Long-projecting GABAergic cell|D1 Medium spiny neuron(D1 MSN)|CCK basket cell|
-                                               Type IC spiral ganglion neuron|Glutamatergic neuron|Excitatory neuron
-                                               |Martinotti cell|Pyramidal cell|Inhibitory neuron
-                                               |Neurogliaform cell|Upper layer 2 cell|Interneuron|Type IA spiral ganglion neuron|
-                                               Type II spiral ganglion neuron|Neuron|Pan-neuronal cell|Basket cell|
-                                               Type IB spiral ganglion neuron|Chandelier cell|Layer neuron|
-                                               GABAergic neuron|Cajal-Retzius cell',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Neurons'
-
-levels(annotation1@meta.data$scinamarker)[grep('Neuroblast|Activated neural stem cell|Neural progenitor cell|Neural stem cell|
-                                               Stem cell',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='neural progenitor cells'
-
-levels(annotation1@meta.data$scinamarker)[grep('Neutrophil',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Granular cells'
-
-levels(annotation1@meta.data$scinamarker)[grep('Endothelial cell',
-                                               ignore.case = T,
-                                               levels(annotation1@meta.data$scinamarker))]='Endothelial cells'
-
-
-
-
-
-
-# 修改tmp的注释# 修改tmp的注释# 修改tmp的注释# 修改tmp的注释# 修改tmp的注释# 修改tmp的注释
-levels(annotation1@meta.data$tmp)[grep('Macrophages|Dendritic cells',
-                                       ignore.case = T,
-                                       levels(annotation1@meta.data$tmp))]='monocyte-derived cells'
-
-levels(annotation1@meta.data$tmp)[grep('qNSCs|aNSCs|NPCs',
-                                       ignore.case = T,
-                                       levels(annotation1@meta.data$tmp))]='neural progenitor cells'
-
-levels(annotation1@meta.data$tmp)[grep('Microglia activated',
-                                       ignore.case = T,
-                                       levels(annotation1@meta.data$tmp))]='Microglia'
-
-levels(annotation1@meta.data$tmp)[grep('Fibroblasts|Cardiomyocytes|Fibroblasts activated',
-                                       ignore.case = T,
-                                       levels(annotation1@meta.data$tmp))]='Perivascular cells'
-
-
-
-levels(annotation1@meta.data$tmp)[grep('Ependymal',
-                                       ignore.case = T,
-                                       levels(annotation1@meta.data$tmp))]='Ependymal cells'
-
-levels(annotation1@meta.data$tmp)[grep('NK cells',
-                                       ignore.case = T,
-                                       levels(annotation1@meta.data$tmp))]='Lymphocytes'
-
-levels(annotation1@meta.data$tmp)[grep('B cells|T cells|NK cells',
-                                       ignore.case = T,
-                                       levels(annotation1@meta.data$tmp))]='Lymphocytes'
-
-
-######################合并data
-## step1 合并cellmarker
-dat.testmerge=data.frame(scina=annotation1@meta.data$scinamarker,panglao=annotation1@meta.data$panglao)
-
-dat.testmerge$decision=apply(dat.testmerge, 1, function(x){
-  length(unique(x))==1
-})
-
-annotation1=annotation1[,dat.testmerge$decision]
-
-## step2 合并 cellmarker和reference
-dat.testmerge=data.frame(scina=annotation1@meta.data$scinamarker,tmp=annotation1@meta.data$tmp)
-
-dat.testmerge$decision=apply(dat.testmerge, 1, function(x){
-  length(unique(x))==1
-})
-
-annotation1=annotation1[,dat.testmerge$decision]
-
-annotation1@meta.data[["tmp"]]=droplevels(annotation1@meta.data[["tmp"]])
-
-## 整理合并后数据
-tmpname=levels(annotation1@meta.data[["tmp"]])[table(annotation1@meta.data[["tmp"]])<50]
-
-for (i in tmpname) {
-  annotation1=subset(annotation1, tmp!=c(i))
-  gc()
+## 组合的合并函数
+get_consensus_label <- function(labels){
+  labels <- labels[labels != "ambiguous"]
+  if (length(labels) == 0) {return("ambiguous")}
+  freq <- table(labels)
+  label <- names(freq)[which(freq == max(freq))]
+  if (length(label) > 1) {return("ambiguous")}
+  return(label)
 }
 
-annotation1@meta.data[["tmp"]]=droplevels(annotation1@meta.data[["tmp"]])
-DimPlot(annotation1, reduction = "tsne", label = T, group.by = 'tmp')
-saveRDS(annotation1,file = 'annotation2.finalcluster.rds')
+tmp=apply(data1,1, get_consensus_label)
+
+obj.merge@meta.data$finalcluster=factor(tmp,levels = unique(tmp))
+
+## 获得最后的数据
+obj.mergef=subset(obj.merge,finalcluster!='ambiguous')
+obj.mergef@meta.data$finalcluster=droplevels(obj.mergef@meta.data$finalcluster)
+
+saveRDS(obj.mergef,file='finalcluster.rds')
+
+# 整合数据
+obj.mergef=readRDS('finalcluster.rds')
+## 分组
+obj.mergef@meta.data$celltype.group=gsub('control','Sham',obj.mergef@meta.data[["group"]]) %>% gsub('IS','MCAO',.)
+## 提取大于50的细胞的cluster
+clusterremain=unique(obj.mergef@meta.data$finalcluster)[table(obj.mergef@meta.data$finalcluster)>50]
+Idents(obj.mergef) <- obj.mergef@meta.data[["finalcluster"]]
+obj.mergef1=subset(x = obj.mergef, idents =clusterremain)
+obj.mergef1@meta.data[["tmp"]]=droplevels(obj.mergef1@meta.data[["finalcluster"]])
+
+rm(list=ls()[ls()!='obj.mergef1'])
+gc()
+saveRDS(obj.mergef1,file='prunnedfinalcluster.rds')
+
+
+## 画图看下聚类效果
+DimPlot(obj.mergef1, reduction = "tsne", label = T, group.by = 'finalcluster')
+library(ggplot2)
+library(cowplot)
+library(patchwork)
+plots <- VlnPlot(obj.mergef1,slot = 'data',features = c("P2ry12"), split.by = "celltype.group", group.by = "tmp",
+                 pt.size = 0, combine = FALSE)
+wrap_plots(plots = plots, ncol = 1)
