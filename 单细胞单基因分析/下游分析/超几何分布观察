@@ -1,0 +1,12 @@
+# 超几何分布比较bulk及singlecell --------------------------------------------------
+# https://cran.r-project.org/web/packages/mHG/mHG.pdf
+# mhg值相当于p-value，p-value相当于校正p
+library(mHG)
+minhgeo=function(bulkgene,singlegene,p,n=length(singlegene)){
+  bulkgene.p=bulkgene[1:round(length(bulkgene)*p*0.01)]
+  singlegene.n=head(singlegene,n)
+  tmp= bulkgene.p %in% singlegene.n
+  result <- mHG.test(tmp)[["p.value"]]}
+
+## 一般有 20 30 40 percent
+test=minhgeo(prunned_p2data.gene,p2geneset,70)
