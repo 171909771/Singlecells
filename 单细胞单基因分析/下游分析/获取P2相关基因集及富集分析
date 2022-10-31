@@ -5,14 +5,10 @@ library(Seurat)
 
 GSE167593 <- readRDS("GSE167593.rds")
 GSE174574 <- readRDS("GSE174574.rds")
-GSE197731_24h <- readRDS("GSE197731_24h.rds")
-GSE197731_48h <- readRDS("GSE197731_48h.rds")
 
 GSE167593.micro <- GSE167593[["Microglia"]][["genenames"]]
 GSE174574.micro <-  GSE174574[["Microglia"]][["genenames"]]
-GSE197731_24h.micro <-  GSE197731_24h[["Microglia"]][["genenames"]]
 
-tmp=intersect(GSE167593.micro,GSE174574.micro)
 #########################p2geneset为P2相关基因集##################################### 
 p2geneset <- intersect(tmp,GSE197731_24h.micro)
 
