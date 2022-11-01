@@ -10,7 +10,7 @@ GSE167593.micro <- GSE167593[["Microglia"]][["genenames"]]
 GSE174574.micro <-  GSE174574[["Microglia"]][["genenames"]]
 
 #########################p2geneset为P2相关基因集##################################### 
-p2geneset <- intersect(tmp,GSE197731_24h.micro)
+p2geneset <- intersect(GSE167593.micro,GSE174574.micro)
 
 
 
