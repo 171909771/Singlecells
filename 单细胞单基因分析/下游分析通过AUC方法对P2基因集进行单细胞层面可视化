@@ -1,0 +1,87 @@
+library(AUCell)
+library(clusterProfiler)
+library(ggplot2)
+library(Seurat)
+library(SeuratData)
+
+
+cd8.seurat <-  readRDS('prunnedfinalcluster.rds') 
+cells_rankings <- AUCell_buildRankings(cd8.seurat@assays[["alra"]]@data)  # 关键一步
+# ?AUCell_buildRankings
+
+
+geneSets <- readRDS('p2share_geneset.rds')
+cells_AUC <- AUCell_calcAUC(geneSets, cells_rankings, aucMaxRank=nrow(cells_rankings)*0.1)
+
+
+aucs <- as.numeric(cells_AUC@assays@data@listData[["AUC"]])
+cd8.seurat$AUC <- aucs
+
+df<- data.frame(cd8.seurat@meta.data, cd8.seurat@reductions$tsne@cell.embeddings)
+
+
+
+# 共同AUC -------------------------------------------------------------------
+
+class_avg <- df %>%
+  group_by( tmp) %>%
+  summarise(
+    tSNE_1 = median(tSNE_1),
+    tSNE_2 = median(tSNE_2)
+  )
+
+p1 <- ggplot(df, aes(tSNE_1, tSNE_2))  +
+  geom_point(aes(colour  = AUC)) + viridis::scale_color_viridis(option="A") +
+  ggrepel::geom_label_repel(aes(label = tmp),
+                            data = class_avg,
+                            size = 6,
+                            label.size = 0,
+                            segment.color = NA
+  )+   theme(legend.position = "none") + theme_bw()
+
+# sham AUC ----------------------------------------------------------------
+df.sham <- subset(df,celltype.group=='Sham')
+
+class_avg <- df.sham %>% 
+  group_by( tmp) %>%
+  summarise(
+    tSNE_1 = median(tSNE_1),
+    tSNE_2 = median(tSNE_2)
+  )
+
+p2 <- ggplot(df.sham, aes(tSNE_1, tSNE_2))  +
+  geom_point(aes(colour  = AUC)) + viridis::scale_color_viridis(option="A") +
+  ggrepel::geom_label_repel(aes(label = tmp),
+                            data = class_avg,
+                            size = 6,
+                            label.size = 0,
+                            segment.color = NA
+  )+   theme(legend.position = "none") + theme_bw()
+
+
+# MCAO AUC ----------------------------------------------------------------
+
+
+df.mcao <- subset(df,celltype.group=='MCAO')
+
+class_avg <- df.mcao %>% 
+  group_by( tmp) %>%
+  summarise(
+    tSNE_1 = median(tSNE_1),
+    tSNE_2 = median(tSNE_2)
+  )
+
+p3 <- ggplot(df.mcao, aes(tSNE_1, tSNE_2))  +
+  geom_point(aes(colour  = AUC)) + viridis::scale_color_viridis(option="A") +
+  ggrepel::geom_label_repel(aes(label = tmp),
+                            data = class_avg,
+                            size = 6,
+                            label.size = 0,
+                            segment.color = NA
+  )+   theme(legend.position = "none") + theme_bw()
+
+
+# draw  -------------------------------------------------------------------
+
+p1+p2+p3
+
