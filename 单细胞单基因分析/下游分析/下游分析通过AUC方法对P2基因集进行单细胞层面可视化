@@ -88,6 +88,9 @@ p3 <- ggplot(df.mcao, aes(tSNE_1, tSNE_2))  +
 p1+p2+p3
 
 ###############################################GSE174574
+## AUCell_buildRankings内存不够 用下面的方法，就是拆分数据后合并
+## https://github.com/aertslab/AUCell/issues/11
+
 library(AUCell)
 library(clusterProfiler)
 library(ggplot2)
