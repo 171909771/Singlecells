@@ -17,6 +17,7 @@ test.GSE167593MCO <- subset(GSE167593MCO,absvalue>0.6)
 test.GSE174574MCAO <- subset(GSE174574MCAO,absvalue>0.6)
 genemerge <- intersect(test.GSE167593MCO$genenames,test.GSE174574MCAO$genenames)
 
+saveRDS(genemerge,file = 'mcaoGSE167593_174574_shared_geneset.rds')  # 在downstream analysis 文件夹下
 ## 出现的GO富集，有P2的情况下
 glial cell migration
 lamellipodium assembly
