@@ -1,0 +1,22 @@
+### 分别对GSE167593和GSE174574提取数据
+annotation1=readRDS('prunnedfinalcluster.rds')
+## 提取mcao中的相关性矩阵
+cluster.mcao=subset(data,celltype.group=='MCAO' & tmp=='Microglia')
+dat.cluster.mcao=data.frame(GetAssayData(cluster.mcao))
+y1=as.numeric(dat.cluster.mcao['P2ry12',])
+testmcao=cor(y1,t(dat.cluster.mcao))
+testmcao=data.frame(value=t(testmcao))
+testmcao$genenames=rownames(testmcao)
+testmcao$absvalue=abs(testmcao$value)
+
+## 转存为不同的数据集
+GSE167593MCO <- testmcao
+GSE174574MCAO <- testmcao
+## 获取share的基因列表，cor系数大于0.6
+test.GSE167593MCO <- subset(GSE167593MCO,absvalue>0.6)
+test.GSE174574MCAO <- subset(GSE174574MCAO,absvalue>0.6)
+genemerge <- intersect(test.GSE167593MCO$genenames,test.GSE174574MCAO$genenames)
+
+## 出现的GO富集，有P2的情况下
+glial cell migration
+lamellipodium assembly
