@@ -87,3 +87,109 @@ p3 <- ggplot(df.mcao, aes(tSNE_1, tSNE_2))  +
 
 p1+p2+p3
 
+###############################################GSE174574
+library(AUCell)
+library(clusterProfiler)
+library(ggplot2)
+library(Seurat)
+library(SeuratData)
+
+
+cd8.seurat <-  readRDS('prunnedfinalcluster.rds') 
+cd8.seurat1 <- subset(cd8.seurat,celltype.group=='Sham')
+rm(cd8.seurat)
+gc()
+cells_rankings1 <- AUCell_buildRankings(cd8.seurat1@assays[["alra"]]@data)  # 关键一步
+saveRDS(cells_rankings1,file='tmp1.rds')
+ 
+cd8.seurat <-  readRDS('prunnedfinalcluster.rds') 
+cd8.seurat2 <- subset(cd8.seurat,celltype.group=='MCAO')
+rm(cd8.seurat,cd8.seurat1)
+gc()
+cells_rankings2 <- AUCell_buildRankings(cd8.seurat2@assays[["alra"]]@data)  # 关键一步
+
+cells_rankings <- cbind(cells_rankings1,cells_rankings2)
+saveRDS(cells_rankings,file='cells_rankings.rds')  #在downstream文件夹
+# ?AUCell_buildRankings
+
+
+
+# 重新载入
+
+cd8.seurat <-  readRDS('prunnedfinalcluster.rds') 
+geneSets <- readRDS('p2share_geneset.rds')
+cells_rankings <- readRDS('cells_rankings.rds') 
+cells_AUC <- AUCell_calcAUC(geneSets, cells_rankings, aucMaxRank=nrow(cells_rankings)*0.1)
+
+
+aucs <- as.numeric(cells_AUC@assays@data@listData[["AUC"]])
+cd8.seurat$AUC <- aucs
+
+df<- data.frame(cd8.seurat@meta.data, cd8.seurat@reductions$tsne@cell.embeddings)
+
+
+
+# 共同AUC -------------------------------------------------------------------
+
+class_avg <- df %>%
+  group_by( tmp) %>%
+  summarise(
+    tSNE_1 = median(tSNE_1),
+    tSNE_2 = median(tSNE_2)
+  )
+
+p1 <- ggplot(df, aes(tSNE_1, tSNE_2))  +
+  geom_point(aes(colour  = AUC)) + viridis::scale_color_viridis(option="A") +
+  ggrepel::geom_label_repel(aes(label = tmp),
+                            data = class_avg,
+                            size = 6,
+                            label.size = 0,
+                            segment.color = NA
+  )+   theme(legend.position = "none") + theme_bw()
+
+# sham AUC ----------------------------------------------------------------
+df.sham <- subset(df,celltype.group=='Sham')
+
+class_avg <- df.sham %>% 
+  group_by( tmp) %>%
+  summarise(
+    tSNE_1 = median(tSNE_1),
+    tSNE_2 = median(tSNE_2)
+  )
+
+p2 <- ggplot(df.sham, aes(tSNE_1, tSNE_2))  +
+  geom_point(aes(colour  = AUC)) + viridis::scale_color_viridis(option="A") +
+  ggrepel::geom_label_repel(aes(label = tmp),
+                            data = class_avg,
+                            size = 6,
+                            label.size = 0,
+                            segment.color = NA
+  )+   theme(legend.position = "none") + theme_bw()
+
+
+# MCAO AUC ----------------------------------------------------------------
+
+
+df.mcao <- subset(df,celltype.group=='MCAO')
+
+class_avg <- df.mcao %>% 
+  group_by( tmp) %>%
+  summarise(
+    tSNE_1 = median(tSNE_1),
+    tSNE_2 = median(tSNE_2)
+  )
+
+p3 <- ggplot(df.mcao, aes(tSNE_1, tSNE_2))  +
+  geom_point(aes(colour  = AUC)) + viridis::scale_color_viridis(option="A") +
+  ggrepel::geom_label_repel(aes(label = tmp),
+                            data = class_avg,
+                            size = 6,
+                            label.size = 0,
+                            segment.color = NA
+  )+   theme(legend.position = "none") + theme_bw()
+
+
+# draw  -------------------------------------------------------------------
+
+p1+p2+p3
+
