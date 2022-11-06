@@ -12,7 +12,18 @@ GSE174574.micro <-  GSE174574[["Microglia"]][["genenames"]]
 #########################p2geneset为P2相关基因集##################################### 
 p2geneset <- intersect(GSE167593.micro,GSE174574.micro)
 
+#############################所有的共有P2相关基因集65个################
+dat24 <- readRDS('GSE197731_24h.rds')
+dat48 <- readRDS('GSE197731_48h.rds')
 
+dat24.micro <- dat24[["Microglia"]][["genenames"]]
+dat48.micro <-  dat48[["Microglia"]][["genenames"]]
+
+p2geneset1 <- intersect(dat24.micro,dat48.micro)
+p2geneset <- readRDS('p2share_geneset.rds')
+
+p2geneset.final <- intersect(p2geneset1,p2geneset)
+saveRDS(p2geneset.final,file = 'p2geneset_all.rds')
 
 
 # 待开发MMP2 dataset 内部的相关性分析 ------------------------------------------------
