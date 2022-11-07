@@ -1,0 +1,97 @@
+# 1.数据前处理 -----------------------------------------------------------------
+
+library(limma)
+library(edgeR)
+## 读取数据并转换一直的变量，改变dat1名称
+# dat=read.delim("GSE172456_Raw_gene_counts_matrix.csv.gz",header = T,comment.char = "!")
+dat=read.csv("GSE172456_Raw_gene_counts_matrix.csv.gz",header = T,comment.char = "!")
+# library(devtools)
+# install_github("jmzeng1314/AnnoProbe")
+library(AnnoProbe)
+rownames(dat) <- dat$X
+dat$X <- NULL
+## 蛋白编码基因的转换
+library(AnnoProbe) 
+ids=annoGene( rownames(dat),'SYMBOL','mouse')
+procongene=ids$SYMBOL[ids$biotypes=='protein_coding']
+dat=dat[rownames(dat)%in%procongene,]
+
+
+# DESeq2归一化 --------------------------------------------------------------------
+
+library(DESeq2)
+dat1 <- dat
+coldata <-data.frame(row.names = colnames(dat1),condition=str_split(colnames(dat1),'M',simplify = T)[,1])
+dds <- DESeqDataSetFromMatrix(dat1, coldata, design= ~ condition )
+dds <- DESeq(dds) 
+dat2 <- counts(dds, normalized=TRUE)
+dat2 <- log(dat2+1)
+colnames(dat2) <- str_split(colnames(dat1),'M',simplify = T)[,1]
+boxplot(dat2)
+
+
+# edgeR归一化 --------------------------------------------------------------------
+library(edgeR)
+
+group <- str_split(colnames(dat1),'M',simplify = T)[,1]
+#（1）构建 DGEList 对象
+dgelist <- DGEList(counts = dat1, group = group)
+#（2）过滤 low count 数据，例如 CPM 标准化（推荐）
+keep <- rowSums(cpm(dgelist) > 1 ) >= 2
+dgelist <- dgelist[keep, , keep.lib.sizes = FALSE]
+### 等价
+keep<- edgeR::filterByExpr(dgelist,group=group)
+dgelist1 <- dgelist[keep, , keep.lib.sizes = FALSE]
+
+#（3）标准化，以 TMM 标准化为例
+###只能得到归一化因子，不体现在matrix上
+dgelist_norm <- calcNormFactors(dgelist, method = 'TMM')
+### 提取矩阵
+##### cpm中有个参数normalized.lib.sizes 就是是否使用上面计算的归一化因子，default T
+dat2 <- edgeR::cpm(dgelist_norm,log = T) # CPM（Counts of exon model per million mapped reads）
+colnames(dat2) <- str_split(colnames(dat1),'M',simplify = T)[,1]
+# limma归一化（待完成） --------------------------------------------------------------------
+# - https://blog.csdn.net/weixin_46587777/article/details/124923211
+
+
+
+
+# 向相同的组取平均值-------------------------------------------------------------------------
+avereps_df  <- t(limma::avereps( t(dat2) , ID = colnames(dat2)))##对相同时间序列的表达值取平均
+
+
+
+# 2. 绘图观察趋势变化 -------------------------------------------------------------
+tmp2 <- readRDS('mcaoGSE167593_174574_shared_geneset.rds')
+avereps_df <- data.frame(avereps_df)
+test <- avereps_df[intersect(rownames(avereps_df),tmp2),]
+
+
+
+test <- data.frame(test)
+# test <- scale(test)
+df <- test
+df$genename <- rownames(df)
+library(reshape2)
+df1 <- melt(df)
+df2 <- subset(df1,genename=='P2ry12')
+wcl <- group_by(df1,variable) %>% summarise(.,type_mean=mean(value))
+library(ggplot2)
+# Basic line plot with points
+ggplot(data=df1, aes(x=variable, y=value, group=genename)) +
+  geom_line()+
+  geom_point()
+# Change the line type
+
+# ggplot(data=df2, aes(x=variable, y=value, group=genename)) +
+#   geom_line()+
+#   geom_point()
+
+ggplot(data=wcl, aes(x=variable, y=type_mean,group=1)) +
+  geom_line()+geom_point()
+
+
+
+ggplot(data=df2, aes(x=variable, y=value,group=1)) +
+  geom_line()+geom_point()
+
