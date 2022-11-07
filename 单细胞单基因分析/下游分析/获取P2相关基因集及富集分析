@@ -11,7 +11,7 @@ GSE174574.micro <-  GSE174574[["Microglia"]][["genenames"]]
 
 #########################p2geneset为P2相关基因集##################################### 
 p2geneset <- intersect(GSE167593.micro,GSE174574.micro)
-
+saveRDS(p2geneset,file='p2.mcao24h.sham.sharedgeneset0.6.rds')
 #############################所有的共有P2相关基因集65个################
 dat24 <- readRDS('GSE197731_24h.rds')
 dat48 <- readRDS('GSE197731_48h.rds')
