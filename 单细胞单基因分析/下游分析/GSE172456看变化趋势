@@ -1,4 +1,8 @@
+
+
 # 1.数据前处理 -----------------------------------------------------------------
+
+
 
 library(limma)
 library(edgeR)
@@ -15,6 +19,10 @@ library(AnnoProbe)
 ids=annoGene( rownames(dat),'SYMBOL','mouse')
 procongene=ids$SYMBOL[ids$biotypes=='protein_coding']
 dat=dat[rownames(dat)%in%procongene,]
+
+
+
+
 
 
 # DESeq2归一化 --------------------------------------------------------------------
@@ -86,12 +94,15 @@ ggplot(data=df1, aes(x=variable, y=value, group=genename)) +
 # ggplot(data=df2, aes(x=variable, y=value, group=genename)) +
 #   geom_line()+
 #   geom_point()
+par(mfrow = c(1, 2))
+    
+    
+p1 <- ggplot(data=wcl, aes(x=variable, y=type_mean,group=1)) +
+  geom_line()+geom_point()+ ggtitle("geneset")
 
-ggplot(data=wcl, aes(x=variable, y=type_mean,group=1)) +
-  geom_line()+geom_point()
-
-
-
-ggplot(data=df2, aes(x=variable, y=value,group=1)) +
-  geom_line()+geom_point()
-
+p2 <- ggplot(data=df2, aes(x=variable, y=value,group=1)) +
+  geom_line()+geom_point()+ ggtitle("P2ry12")
+library("gridExtra")
+grid.arrange(p1,p2,                            # 箱线图和散点图
+             ncol = 2, nrow = 1, 
+             layout_matrix = rbind(c(1,2)))
