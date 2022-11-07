@@ -1,7 +1,7 @@
-GSE77986bulk mcao中下调
+GSE77986bulk mcao中下调：用什么geneset都可以
 
 
-GSE148350bulk 3个月/12个月大鼠 mcao 3day 下调 12day 下调: 用的MCAO24小时的geneset，用全基因不行
+GSE148350bulk 3个月/12个月大鼠 mcao 3day 下调 12day 下调: 用什么geneset都可以
 ![image](https://user-images.githubusercontent.com/41554601/200180723-fc55652c-6766-4ade-9793-2b49cabe25ff.png)
 
 
