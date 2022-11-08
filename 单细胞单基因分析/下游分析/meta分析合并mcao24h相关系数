@@ -14,7 +14,7 @@ library(meta)
 library(HardyWeinberg)
 test <- apply(merge.cor,1,function(x){
   tmp <- metacor(c(as.numeric(x[2]),as.numeric(x[3])),c(23414,56249))
-  postcor <- ifisherz(tmp[["TE.random"]])
+  postcor <- ifisherz(tmp[["TE.random"]])   #必须将 Fish z 转换为 相关系数，这个function就是inversion
   c(x[1],postcor)
   
 })
