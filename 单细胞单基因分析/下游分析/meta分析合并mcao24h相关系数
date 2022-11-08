@@ -1,0 +1,26 @@
+
+# meta 合并cor --------------------------------------------------------------
+
+GSE167593 <- readRDS('GSE167593.cor.23414.rds')
+GSE174574 <- readRDS('GSE174574.cor.56249.rds')
+
+GSE167593$names <- rownames(GSE167593)
+GSE174574$names <- rownames(GSE174574)
+
+
+merge.cor <- merge(GSE167593,GSE174574,by='names')
+
+library(meta)
+library(HardyWeinberg)
+test <- apply(merge.cor,1,function(x){
+  tmp <- metacor(c(as.numeric(x[2]),as.numeric(x[3])),c(23414,56249))
+  postcor <- ifisherz(tmp[["TE.random"]])
+  c(x[1],postcor)
+  
+})
+
+
+test <- data.frame(t(test))
+test$V2 <- as.numeric(test$V2)
+test['P2ry12','V2']=1
+
