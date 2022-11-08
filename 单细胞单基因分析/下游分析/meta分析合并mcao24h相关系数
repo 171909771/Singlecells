@@ -1,4 +1,18 @@
 
+# 计算相关系数 ------------------------------------------------------------------
+library(Seurat)
+
+GSE174574 <- readRDS('prunnedfinalcluster.rds')
+
+GSE174574.data=data.frame(GetAssayData(GSE174574))
+y.p2 <- as.numeric(GSE174574.data['P2ry12',])
+GSE174574.cor <- cor(y.p2,t(GSE174574.data))
+
+GSE174574.cor <- data.frame(t(GSE174574.cor))
+
+saveRDS(GSE174574.cor,file = 'GSE174574.cor.56249.rds')
+
+
 # meta 合并cor --------------------------------------------------------------
 
 GSE167593 <- readRDS('GSE167593.cor.23414.rds')
