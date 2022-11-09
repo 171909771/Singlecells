@@ -1,0 +1,144 @@
+library(tidyverse)
+
+# 数据归一化 + 注释-------------------------------------------------------------------
+
+
+dat1 <- readxl::read_excel('GSE116878_Readcount.xlsx')
+dat1 <- data.frame(dat1)
+rownames(dat1) <- dat1$geneID
+dat1$geneID <- NULL
+
+
+
+
+
+
+colnames(dat1) <- c("Sham_AL_rep1","Sham_AL_rep2","Sham_AL_rep3",
+                    "Sham_EOD_rep1","Sham_EOD_rep2","Sham_EOD_rep3",
+                    "Sham_IF12_rep1","Sham_IF12_rep2","Sham_IF12_rep3",
+                    "Sham_IF16_rep1","Sham_IF16_rep2","Sham_IF16_rep3",
+                    "ISConly_AL_rep1","ISConly_AL_rep2","ISConly_AL_rep3",
+                    "ISConly_EOD_rep1","ISConly_EOD_rep2","ISConly_EOD_rep3",
+                    "ISConly_IF12_rep1","ISConly_IF12_rep2","ISConly_IF12_rep3",
+                    "ISConly_IF16_rep1","ISConly_IF16_rep2","ISConly_IF16_rep3",
+                    "IR03h_AL_rep1","IR03h_AL_rep2","IR03h_AL_rep3",
+                    "IR03h_EOD_rep1","IR03h_EOD_rep2","IR03h_EOD_rep3",
+                    "IR03h_IF12_rep1","IR03h_IF12_rep2","IR03h_IF12_rep3",
+                    "IR03h_IF16_rep1","IR03h_IF16_rep2","IR03h_IF16_rep3",
+                    "IR12h_AL_rep1","IR12h_AL_rep2","IR12h_AL_rep3",
+                    "IR12h_EOD_rep1","IR12h_EOD_rep2","IR12h_EOD_rep3",
+                    "IR12h_IF12_rep1","IR12h_IF12_rep2","IR12h_IF12_rep3",
+                    "IR12h_IF16_rep1","IR12h_IF16_rep2","IR12h_IF16_rep3",
+                    "IR24h_AL_rep1","IR24h_AL_rep2","IR24h_AL_rep3",
+                    "IR24h_EOD_rep1","IR24h_EOD_rep2","IR24h_EOD_rep3",
+                    "IR24h_IF12_rep1","IR24h_IF12_rep2","IR24h_IF12_rep3",
+                    "IR24h_IF16_rep1","IR24h_IF16_rep2","IR24h_IF16_rep3",
+                    "IR72h_AL_rep1","IR72h_AL_rep2","IR72h_AL_rep3",
+                    "IR72h_EOD_rep1","IR72h_EOD_rep2","IR72h_EOD_rep3",
+                    "IR72h_IF12_rep1","IR72h_IF12_rep2","IR72h_IF12_rep3",
+                    "IR72h_IF16_rep1","IR72h_IF16_rep2","IR72h_IF16_rep3")
+
+colnames(dat1) <- str_split(colnames(dat1),'_',simplify = T)[,1]
+
+
+
+library(DESeq2)
+coldata <-data.frame(row.names = colnames(dat1),
+                     condition=str_split(colnames(dat1),'_rep',simplify = T)[,1])
+dds <- DESeqDataSetFromMatrix(dat1, coldata, design= ~ condition )
+dds <- DESeq(dds) 
+dat2 <- counts(dds, normalized=TRUE)
+dat2 <- log(dat2+1)
+colnames(dat2) <- str_split(colnames(dat1),'_rep',simplify = T)[,1]
+
+
+
+boxplot(dat2)
+
+dat1 <- data.frame(dat2)
+
+dat1$geneID <- rownames(dat1)
+
+
+library("org.Mm.eg.db")
+library("clusterProfiler")
+
+conmydata= bitr(geneID = dat1$geneID, fromType = "ENSEMBL",toType = "SYMBOL", OrgDb = org.Mm.eg.db )
+
+
+tmp <- merge(dat1,conmydata,by.x='geneID',by.y='ENSEMBL')
+
+dat <- aggregate(x = tmp[,2:(length(dat1)-1)],
+                 by = list(tmp$SYMBOL),
+                 FUN = mean)
+rownames(dat)=dat$Group.1
+dat$Group.1=NULL
+
+
+library(AnnoProbe) 
+ids=annoGene( rownames(dat),'SYMBOL','mouse')
+procongene=ids$SYMBOL[ids$biotypes=='protein_coding']
+dat=dat[rownames(dat)%in%procongene,]
+
+
+
+
+
+
+
+
+
+# 处理数据 --------------------------------------------------------------------
+dat1 <- dat[,grepl('AL',colnames(dat))]
+dat1 <- dat1[grepl('24|Sham',colnames(dat1))]  # 获取sham和24小时mcao
+colnames(dat1) <- rep(c('Sham','MCAO'),each=3)
+avereps_df  <- t(limma::avereps( t(dat1) , ID = colnames(dat1)))##对相同时间序列的表达值取平均
+
+saveRDS(dat1,file='GSE116878bulk_wholebrain_normalization.rds')
+
+
+tmp <- readRDS('meta_cor_mcao24h.rds')
+tmp2 <- subset(tmp,V2>0.7)
+tmp2 <- tmp2$names
+
+avereps_df <- data.frame(avereps_df)
+
+
+
+test <- avereps_df[intersect(rownames(avereps_df),tmp2),]
+
+
+
+test <- data.frame(test)
+# test <- scale(test)
+df <- test
+df$genename <- rownames(df)
+library(reshape2)
+df1 <- melt(df)
+df2 <- subset(df1,genename=='P2ry12')
+wcl <- group_by(df1,variable) %>% summarise(.,type_mean=mean(value))
+library(ggplot2)
+# Basic line plot with points
+ggplot(data=df1, aes(x=variable, y=value, group=genename)) +
+  geom_line()+
+  geom_point()
+# Change the line type
+
+# ggplot(data=df2, aes(x=variable, y=value, group=genename)) +
+#   geom_line()+
+#   geom_point()
+
+ggplot(data=wcl, aes(x=variable, y=type_mean,group=1)) +
+  geom_line()+geom_point()
+
+
+
+ggplot(data=df2, aes(x=variable, y=value,group=1)) +
+  geom_line()+geom_point()
+
+
+
+
+
+
+
