@@ -24,11 +24,6 @@ minhgeo=function(bulkgene,singlegene,p,n=length(singlegene)){
 
 # 绘制P值曲线 ------------------------------------------------------------------
 
-## 一般有 20 30 40 percent
-ref.single8 <- subset(ref.single,V2>0.75)
-tmp2 <- ref.single8$names
-test=minhgeo(cor.bulk.gene,tmp2,30)
-
 library(Seurat)
 ref.single <- readRDS('meta_cor_mcao24h.rds')
 x1 <- seq(0.6,0.8,0.0001)
