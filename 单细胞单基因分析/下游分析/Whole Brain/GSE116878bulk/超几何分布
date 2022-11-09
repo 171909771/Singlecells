@@ -1,0 +1,57 @@
+## 在meta文件夹下完成
+# 获得GSE77986的P2相关矩阵 -------------------------------------------------------
+test <- readRDS('GSE116878bulk_wholebrain_normalization.rds')
+y.bulk <- as.numeric(test['P2ry12',])
+tmp <- cor(y.bulk,t(test))
+tmp <- data.frame(t(tmp))
+tmp$genenames <- rownames(tmp)
+tmp <- tmp[order(tmp$t.tmp.,decreasing = T),]
+tmp.bulk <- subset(tmp,t.tmp.>0.8)
+cor.bulk.gene <- tmp.bulk$genenames
+
+
+# 超几何分布比较bulk及singlecell --------------------------------------------------
+# https://cran.r-project.org/web/packages/mHG/mHG.pdf
+# mhg值相当于p-value，p-value相当于校正p
+library(mHG)
+minhgeo=function(bulkgene,singlegene,p,n=length(singlegene)){
+  bulkgene.p=bulkgene[1:round(length(bulkgene)*p*0.01)]
+  singlegene.n=head(singlegene,n)
+  tmp= bulkgene.p %in% singlegene.n
+  result <- mHG.test(tmp)[["p.value"]]}
+
+
+
+# 绘制P值曲线 ------------------------------------------------------------------
+
+library(Seurat)
+ref.single <- readRDS('meta_cor_mcao24h.rds')
+x1 <- seq(0.6,0.8,0.001)
+n <- seq(30,50,5)
+y1 <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c('bulkprop','singlenumber','p-value'))))
+
+for (k in n) {
+  for (i in x1) {
+    ref.single8 <- subset(ref.single,V2>i)
+    tmp2 <- ref.single8$names
+    test=minhgeo(cor.bulk.gene,tmp2,k)
+    y2 <- c(k,i,test)
+    y1 <- rbind(y1,y2)
+  }
+}
+colnames(y1) <- c('bulkprop','singlenumber','p_value')
+y1$bulkprop <- as.character(y1$bulkprop)
+p1 <- ggplot(y1,aes(x=singlenumber,y=p_value,color=bulkprop))+geom_line()
+library(ggsci)
+p1+scale_color_aaas()
+
+# # 平滑曲线的做法
+# https://stackoverflow.com/questions/13213451/smoothing-in-ggplot
+# library(splines)
+# ggplot(y1,aes(x=singlenumber,y=p_value,color=bulkprop))+
+#   geom_point()+
+#   geom_smooth(aes(colour=bulkprop), se=F,
+#             method="glm",
+#             formula=y ~ ns(x,df=2000),  # df 为一个类别中x的个数
+#             family=gaussian(link="log"),
+#             show_guide = FALSE,lwd=0.7)
