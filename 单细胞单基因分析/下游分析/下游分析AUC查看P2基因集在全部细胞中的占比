@@ -196,3 +196,8 @@ p3 <- ggplot(df.mcao, aes(tSNE_1, tSNE_2))  +
 
 p1+p2+p3
 
+##########################################还可以用seurat再来一次
+## seurat 自身聚类AddModuleScore
+dat1 <-  AddModuleScore(object = dat1,list(geneSets))   ###geneSets中包含了基因
+## 只看比其他基因更高的表达值
+dat1@meta.data[["Cluster1"]][dat1@meta.data[["Cluster1"]]<0]=0
