@@ -130,3 +130,21 @@ plot_cells(cds,
 ```
 ![image](https://user-images.githubusercontent.com/41554601/202597190-76e34a57-8540-4441-a2b2-a0a10efcc2ce.png)
 
+### 手动选择目标cluster后绘制module
+```r
+## 手动选cluster
+cds_subset <- choose_cells(cds)
+subset_pr_test_res <- graph_test(cds_subset, neighbor_graph="principal_graph", cores=4)
+## 确定展现的基因
+pr_deg_ids <- row.names(subset(subset_pr_test_res, q_value < 0.05))
+gene_module_df <- find_gene_modules(cds_subset[pr_deg_ids,], resolution=0.001)
+agg_mat <- aggregate_gene_expression(cds_subset, gene_module_df)
+module_dendro <- hclust(dist(agg_mat))
+gene_module_df$module <- factor(gene_module_df$module, 
+                                levels = row.names(agg_mat)[module_dendro$order])
+## 每个基因出轨迹图
+plot_cells(cds_subset,
+           genes=gene_module_df,
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE)
+```
