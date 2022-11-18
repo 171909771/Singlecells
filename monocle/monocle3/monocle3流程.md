@@ -131,6 +131,7 @@ plot_cells(cds,
 ![image](https://user-images.githubusercontent.com/41554601/202597190-76e34a57-8540-4441-a2b2-a0a10efcc2ce.png)
 
 ### 手动选择目标cluster后绘制module
+- https://cole-trapnell-lab.github.io/monocle3/docs/differential/  参考网站
 ```r
 ## 手动选cluster
 cds_subset <- choose_cells(cds)
