@@ -81,6 +81,29 @@ plot_cells(cds,
 ```
 ![image](https://user-images.githubusercontent.com/41554601/202502546-a2af039a-57eb-4fdb-9859-6eb4c241841b.png)
 
+### 用连续数值确定轨迹点
+```r
+## 取每个细胞中P2的表达矩阵
+tmp <-cds@assays@data@listData[["counts"]]['P2ry12',]
+tmp <- data.frame(tmp)
+tmp$cellname <- rownames(tmp)
+## 取每个细胞中的路径点值
+closest_vertex <-cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
+closest_vertex <- data.frame(closest_vertex)
+closest_vertex$cellname <- rownames(closest_vertex)
+## 融合2个矩阵
+tmpmerg <- merge(tmp,closest_vertex,by='cellname')
+## 计算在每个轨迹点的平均值，并取最大值的点
+tmpmerg <- data.frame(tmpmerg)
+rownames(tmpmerg) <- tmpmerg$cellname
+tmpmerg$cellname <- NULL
+test <- tmpmerg %>% group_by(closest_vertex) %>% summarise('meannumber'=mean(tmp))
+test.numb <- test$closest_vertex[which.max(test$meannumber)]
+root_pr_nodes <-
+  igraph::V(principal_graph(cds)[["UMAP"]])$name[as.numeric(test.numb)]
+cds <- order_cells(cds, root_pr_nodes=root_pr_nodes)
+```
+
 ### 划分modules
 ```r
 ciliated_cds_pr_test_res <- graph_test(cds, neighbor_graph="principal_graph", cores=8)
