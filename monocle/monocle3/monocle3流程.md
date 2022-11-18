@@ -80,3 +80,30 @@ plot_cells(cds,
            graph_label_size=1.5)
 ```
 ![image](https://user-images.githubusercontent.com/41554601/202502546-a2af039a-57eb-4fdb-9859-6eb4c241841b.png)
+
+### 划分modules
+```r
+ciliated_cds_pr_test_res <- graph_test(cds, neighbor_graph="principal_graph", cores=8)
+pr_deg_ids <- row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
+gene_module_df <- find_gene_modules(cds[pr_deg_ids,], resolution=c(10^seq(-6,-1)))
+cell_group_df <- tibble::tibble(cell=row.names(colData(cds)), 
+                                cell_group=cds@clusters@listData[["UMAP"]][["clusters"]])
+agg_mat <- aggregate_gene_expression(cds, gene_module_df, cell_group_df)
+row.names(agg_mat) <- stringr::str_c("Module ", row.names(agg_mat))
+pheatmap::pheatmap(agg_mat,
+                   scale="column", clustering_method="ward.D2")
+```
+![image](https://user-images.githubusercontent.com/41554601/202597203-b1135bc5-48c2-4f7c-ba79-42ebd1a655e8.png)
+
+### 颜色改变
+```r
+library(tidyverse)
+## 改变颜色
+## https://github.com/cole-trapnell-lab/monocle3/issues/181
+plot_cells(cds,
+           genes=gene_module_df %>% filter(module %in% c(60,44)),
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE)+scale_color_gradient(low="green", high="red")
+```
+![image](https://user-images.githubusercontent.com/41554601/202597190-76e34a57-8540-4441-a2b2-a0a10efcc2ce.png)
+
