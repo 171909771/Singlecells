@@ -81,7 +81,7 @@ plot_cells(cds,
 ```
 ![image](https://user-images.githubusercontent.com/41554601/202502546-a2af039a-57eb-4fdb-9859-6eb4c241841b.png)
 
-### 用连续数值确定轨迹点
+##### 用连续数值确定轨迹点
 ```r
 ## 取每个细胞中P2的表达矩阵
 tmp <-cds@assays@data@listData[["counts"]]['P2ry12',]
