@@ -18,7 +18,7 @@ AUC的运算
 - https://github.com/aertslab/AUCell/blob/bf2b9e19b5b7a5736b12d118fa88382e8101146e/R/priv_auc.assignmnetThreshold_v6.R
 
 **思路： 对模型进行binomal分布拟合，分析后选取以下最佳阈值：**
-- minimumDens (plot in Blue)： 分析核密度曲线，取第一个上升的拐点
+### minimumDens (plot in Blue)： 分析核密度曲线，取第一个上升的拐点
 ```r
 densCurve <- density(auc, adjust=densAdjust, cut=0)  # 构建和密度
   maximumsDens <- NULL
@@ -53,7 +53,7 @@ densCurve <- density(auc, adjust=densAdjust, cut=0)  # 构建和密度
   }
 ```
 
-- Global_k1 (plot in Grey): 对整个数据进行正态分布分析，取0.01的BH校正值对应x轴
+### Global_k1 (plot in Grey): 对整个数据进行正态分布分析，取0.01的BH校正值对应x轴
 ```r
   meanAUC <- mean(auc)
   sdAUC <- sd(auc)
@@ -69,7 +69,7 @@ densCurve <- density(auc, adjust=densAdjust, cut=0)  # 构建和密度
     aucThrs["outlierOfGlobal"] <- qnorm(1-(thrP/nCells), mean=meanAUC, sd=sdAUC)   # 关键步骤
 ```
 
-- tenPercentOfMax：取auc最大值的前10%, 注意code中中文注释的2个条件
+### tenPercentOfMax：取auc最大值的前10%, 注意code中中文注释的2个条件
 ```r
   histogram <- hist(c(0, auc/max(auc)), breaks=100, plot=FALSE)$count
   if((sum(histogram[1:5]) / sum(histogram)) >= notPopPercent*.75) {   # hist出的数据中前5%的频率大于总的计数的（.75*.75），即太多0了
@@ -102,7 +102,7 @@ densCurve <- density(auc, adjust=densAdjust, cut=0)  # 构建和密度
         }))
 ```
 
-- L_k2 (plot in Red): 左分布，2个混合分布中，取左分布（均值最小）的右侧0.01的BH校正值对应x轴
+### L_k2 (plot in Red): 左分布，2个混合分布中，取左分布（均值最小）的右侧0.01的BH校正值对应x轴
 ```r
   if(!is.null(distrs[["k2"]]))
   {
@@ -112,7 +112,7 @@ densCurve <- density(auc, adjust=densAdjust, cut=0)  # 构建和密度
                              sd=distrs[["k2"]][["sigma"]][k2_L])
   }
 ```
-- R_k3 (plot in Pink): 右分布，3个混合分布中，取右分布(均值最大)的左侧0.01的BH校正值对应x轴
+### R_k3 (plot in Pink): 右分布，3个混合分布中，取右分布(均值最大)的左侧0.01的BH校正值对应x轴
 ```r
   if(!is.null(distrs[["k3"]]))
   {
@@ -124,6 +124,45 @@ densCurve <- density(auc, adjust=densAdjust, cut=0)  # 构建和密度
   }
 ```
 
+备注
+-----
+### 曲线的高度与标准差sigma和lambda相关
+```r
+  if(!is.null(distrs[["k2"]]))
+    {
+      compL <- which.min(distrs[["k2"]][["mu"]])   # 取最小的mu
+      compR <- which.max(distrs[["k2"]][["mu"]])   # 取最大的mu
+      ### Check distributions
+      # Second distribution is "taller" than first one
+      height1 <- .4/distrs[["k2"]][["sigma"]][compL]*
+        distrs[["k2"]][["lambda"]][compL]
+      height2 <- .4/distrs[["k2"]][["sigma"]][compR]*
+        distrs[["k2"]][["lambda"]][compR]
+      taller <- height1 < height2
+      # Use global distr:
+      # Mean of the global distr is included within the SD of the first
+      # & Both means are included within the mean+SD of the Global distribution
+      globalInclInFirst <-   # 全局正态在k2正态中：全局均值小于k2均值+1.5倍sigma
+        (distrs[["Global_k1"]]$mu[1] <
+        (distrs[["k2"]][["mu"]][compL]+(1.5*distrs[["k2"]][["sigma"]][compL])))
+      includedInGlobal <-     # K2的2个正态分布都在全局正态中：K2左侧正态均值大于全局均值-sigma， 并且K2右侧正态均值小于全局均值+sigma
+        ((distrs[["k2"]][["mu"]][compL] >
+        (distrs[["Global_k1"]]$mu[1]-distrs[["Global_k1"]]$sigma[1])) &&
+          (distrs[["k2"]][["mu"]][compR] <
+          (distrs[["Global_k1"]]$mu[1]+distrs[["Global_k1"]]$sigma[1])))
+      if(taller || (globalInclInFirst && includedInGlobal))
+      {
+        skipGlobal <- FALSE
+
+        if(globalInclInFirst && includedInGlobal)
+          commentMsg <- paste0(commentMsg,
+                "The global distribution overlaps the partial distributions. ")
+        if(taller && !includedInGlobal)
+          commentMsg <- paste0(commentMsg, "The right distribution is taller. ")
+      }
+    }
+  }
+```
 
 
 
