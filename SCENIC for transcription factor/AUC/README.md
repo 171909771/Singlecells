@@ -54,6 +54,7 @@ densCurve <- density(auc, adjust=densAdjust, cut=0)  # 构建和密度
 ```
 
 ### Global_k1 (plot in Grey): 对整个数据进行正态分布分析，取0.01的BH校正值对应x轴
+##### 对于p值，另一个函数中写了还需要加0.25，即 glProb <- 1-(thrP/nCells + smallestPopPercent)， 源代码注释中也提出了质疑
 ```r
   meanAUC <- mean(auc)
   sdAUC <- sd(auc)
