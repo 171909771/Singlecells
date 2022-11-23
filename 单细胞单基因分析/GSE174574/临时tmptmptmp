@@ -1,0 +1,16 @@
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+options (warn = -1)
+## 取不同细胞类型的基因集
+obj.merge=readRDS('prunnedcelltype.rds')
+obj.merge1 <- obj.merge
+
+
+tmp_type <- obj.merge@meta.data[["celltype"]]=='Microglia'
+tmp_data <- data.frame(obj.merge[,tmp_type]@assays[["alra"]]@data)
+tmp_P2 <- as.numeric(tmp_data['P2ry12',])
+tmp_cor=cor(tmp_P2,t(tmp_data))
+tmp_cor=data.frame(value=t(tmp_cor))
+tmp_cor$genenames=rownames(tmp_cor)
+
