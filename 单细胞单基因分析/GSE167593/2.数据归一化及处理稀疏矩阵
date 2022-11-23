@@ -1,50 +1,67 @@
-
-
-
-
+library(Seurat)
 library(SeuratWrappers)
-
-#step1 alra和校正批次效应，非常花时间
-sce.list <- lapply(X = sce.list, FUN = function(x) {
-  x <- NormalizeData(x, normalization.method = "LogNormalize", scale.factor = 10000)
-  x=RunALRA(x)
-  x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 3000)
-})
+library(harmony)
 
 
+# 数据前处理 -------------------------------------------------------------------
 
-atoms.merge <- lapply(X = sce.list, FUN = function(x) {
-  x <- LeverageScoreSampling(object = x, num.cells = 5000)
-})
+samples=list.files("GSE174574/")
+samples
+dir <- file.path('./GSE174574',samples)
+names(dir) <- samples
+
+scRNAlist <- list()
+for(i in 1:length(dir)){
+  print(i)
+  counts <- Read10X(data.dir = dir[i])
+  scRNAlist[[i]] <- CreateSeuratObject(counts, min.cells=3)
+}
+scRNA2 <- merge(scRNAlist[[1]], y=c(scRNAlist[[2]], scRNAlist[[3]], scRNAlist[[4]], scRNAlist[[5]], scRNAlist[[6]]))
+sce.list=scRNA2
+mt=rownames(sce.list)[grep("^mt-",rownames(sce.list),ignore.case = T)]
+mt=substr(mt[1],0,3)
+sce.list <- PercentageFeatureSet(sce.list, pattern = mt, col.name = "percent.mt")
+# 查看表达情况
+VlnPlot(sce.list, features = c("nFeature_RNA", "nCount_RNA","percent.mt"), ncol = 3)
+# 设定表达阈值
+sce.list <- subset(sce.list, subset = nFeature_RNA <6000  & percent.mt < 50)
+# 修改分组情况
+levels(sce.list@active.ident)=c(paste(rep('Sham',3),sep = '',seq(1,3)),paste(rep('MCAO',3),sep = '',seq(1,3)))
+# 根据分组信息进行拆分数据
+sce.list$orig.ident=sce.list@active.ident
+sce.list <- SplitObject(sce.list, split.by = "orig.ident")
+rm(list=ls()[ls()!='sce.list'])
+gc()
 
 
+# 数据去0、整合及降维 ----------------------------------------------------------------------
+
+## 数据去0
+sce.list <- lapply(sce.list, function(x){
+  x <- NormalizeData(x)
+  x <- RunALRA(x)
+  })
+gc()
+scRNA2 <- merge(sce.list[[1]], 
+                y=c(sce.list[[2]], 
+                    sce.list[[3]], 
+                    sce.list[[4]], 
+                    sce.list[[5]], sce.list[[6]]))
+rm(sce.list)
+gc()
+
+## 数据整合
+DefaultAssay(scRNA2)='RNA'
+scRNA2 <- scRNA2 %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA(verbose = FALSE)
+scRNA2 <- RunHarmony(scRNA2, group.by.vars = 'orig.ident')
 
 
+## 数据降维
+scRNA2 <- RunTSNE(scRNA2,reduction = "harmony")
+scRNA2 <- RunUMAP(scRNA2,reduction = "harmony", dims = 1:30)
+scRNA2@meta.data[["tmp"]] <- as.factor(scRNA2@meta.data[["orig.ident"]])
+levels(scRNA2@meta.data[["tmp"]]) <- c(rep("MCAO",3),rep("Sham",3))
+DimPlot(scRNA2,reduction = 'tsne',group.by = 'tmp')
+DimPlot(scRNA2,reduction = 'umap',group.by = 'tmp')
 
-features <- SelectIntegrationFeatures(object.list = atoms.merge)
-
-atoms.merge <- FastRPCAIntegration(object.list = atoms.merge, dims = 1:30, normalization.method = "LogNormalize",
-                                   anchor.features = features)
-
-
-atom.reduction <- "integrated_dr"
-atoms.merge <- RunUMAP(atoms.merge, reduction = atom.reduction, dims = 1:30, return.model = TRUE)
-
-
-
-sce.list <- lapply(X = sce.list, FUN = function(x) {
-  x <- IntegrateSketchEmbeddings(object = x, atom.sketch.object = atoms.merge, atom.sketch.reduction = atom.reduction,
-                                 features = features)
-})
-
-
-
-obj.merge <- merge(sce.list[[1]], sce.list[2:length(sce.list)], merge.dr = "integrated_dr")
-
-obj.merge <- RunTSNE(obj.merge, reduction = "integrated_dr", dims = 1:30)
-obj.merge <- FindNeighbors(obj.merge,  graph.name = "test",reduction = "integrated_dr", dims = 1:30)
-obj.merge <- FindClusters(obj.merge, graph.name = "test", resolution = 1.5)
-
-DimPlot(obj.merge, reduction = "tsne", group.by = "seurat_clusters", shuffle = TRUE, raster = FALSE)
-# 保存整合信息
-saveRDS(obj.merge,'mergealrafinal.rds')
+saveRDS(scRNA2,file = 'umap_tsne.rds')
