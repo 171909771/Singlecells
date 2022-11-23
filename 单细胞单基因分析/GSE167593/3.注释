@@ -11,8 +11,7 @@ suppressMessages(library(scran))
 suppressMessages(library(Seurat))
 
 ## 读取数据
-obj.merge=readRDS('mergealrafinal.rds')
-
+obj.merge <- readRDS('umap_tsne.rds')
 
 mouseRNA <- MouseRNAseqData()
 ref=mouseRNA
@@ -34,21 +33,26 @@ top.hvgs2=top.hvgs2[top.hvgs2 %in% rownames(obj.merge)]
 # 导入数据种
 ref_sce <- setFeatures(ref_sce, features =top.hvgs2)
 
+
+
 # 按照cell计算
 ref_sce <- scmap::indexCell(ref_sce)
 scmap_cell_reference <- metadata(ref_sce)$scmap_cell_index
 scmap_cell_metadata <- colData(ref_sce)
 
 
-query_sce <- SingleCellExperiment::SingleCellExperiment(assays=list(counts=obj.merge@assays[["alra"]]@data))
+
+
+query_sce <- SingleCellExperiment(assays=
+                                    list(counts=obj.merge@assays[["alra"]]@data))
 rowData(query_sce)$feature_symbol <- rownames(query_sce)
 logcounts(query_sce)=query_sce@assays@data@listData[["counts"]]
 
 # 基于cell注释
 nearest_neighbours <- scmap::scmapCell(projection=query_sce, 
-                                       index_list = list(immune1 = scmap_cell_reference), 
+                                       index_list = list(ref1 = scmap_cell_reference), 
                                        w=10)
-
+gc()
 mode_label <- function(neighbours, metadata=scmap_cell_metadata$cell_type1) {
   freq <- table(metadata[neighbours])  #非常巧妙的统计每个query细胞的可能细胞类型，neighbours代表query每个细胞类型标号，metadata代表ref每个细胞类型
   label <- names(freq)[which(freq == max(freq))]
@@ -56,7 +60,7 @@ mode_label <- function(neighbours, metadata=scmap_cell_metadata$cell_type1) {
   return(label)
 }
 
-scmap_cell_labs <- apply(nearest_neighbours$immune1$cells, 2, mode_label)
+scmap_cell_labs <- apply(nearest_neighbours$ref1$cells, 2, mode_label)
 colData(query_sce)$scmap_cell <- scmap_cell_labs
 
 ##########################singleR
@@ -66,23 +70,20 @@ sum(is.na(predictions$pruned.labels))
 predictions$pruned.labels[which(is.na(predictions$pruned.labels))] <- "ambiguous"
 colData(query_sce)$singleR_cell <- predictions$pruned.labels
 
+gc()
 
 
 
-
-## 注释放入seurat数据集
+## 整理注释数据集
 ###1.scmap_cell
-new.cluster.ids=factor(query_sce@colData@listData[["scmap_cell"]],
+scampcell=factor(query_sce@colData@listData[["scmap_cell"]],
                        levels = unique(query_sce@colData@listData[["scmap_cell"]]))
-obj.merge@meta.data$scmap_cell=new.cluster.ids
 
 ###2.singleR_cell
-new.cluster.ids=factor(query_sce@colData@listData[["singleR_cell"]],
+singleRcell=factor(query_sce@colData@listData[["singleR_cell"]],
                        levels = unique(query_sce@colData@listData[["singleR_cell"]]))
-obj.merge@meta.data$singleR_cell=new.cluster.ids
 
-
-rm(list=ls()[ls()!='obj.merge'])
+rm(list=ls()[!ls() %in% c('obj.merge','scampcell','singleRcell')])
 gc()
 
 
@@ -93,34 +94,29 @@ library(readxl)
 # http://yikedaxue.slwshop.cn/download.php 下载地址
 dat1=read_excel('Cell_marker_All.xlsx')
 # 取dataset中下面的条件
-dat2=subset(dat1,Species=='Mouse' & `Tissue class` == 'Brain' & `Cancer type`=='Normal')
+dat1=subset(dat1,Species=='Mouse' & `Tissue class` == 'Brain' & `Cancer type`=='Normal')
 # 整理数据
-dat3=dat2[c('Cell name','Symbol')]
-list1= split(dat3, dat3$`Cell name`)
-list2=lapply(list1, function(x){
+dat1=dat1[c('Cell name','Symbol')]
+list1= split(dat1, dat1$`Cell name`)
+list1=lapply(list1, function(x){
   x$Symbol})
+
 ## 1.去除重复项基因
-list3=lapply(list2, function(x){
+list1=lapply(list1, function(x){
   x=unique(x)
 })
 
 ## 2.去除querydata中没有的gene
 gene1=rownames(obj.merge)
-list3=lapply(list3, function(x){
+list1=lapply(list1, function(x){
   x=x[x%in% gene1]
   if(length(x)>0){
     return(x)
   }
 })
 
-
-
-
-
-
-
 ## 3.数据集中大于200的基因进行seurat的FindVariableFeatures提取高变异基因200个
-list3=lapply(list3, function(x){
+list1=lapply(list1, function(x){
   if(length(x)>200){
     tmp <- obj.merge[x,]
     tmp@assays[["alra"]]@counts=tmp@assays[["alra"]]@data   # alra的counts中没有数值，向alra的counts中填充值
@@ -130,19 +126,26 @@ list3=lapply(list3, function(x){
   return(x)
 })
 ## 4.去除NULL的list
-list3=Filter(Negate(is.null), list3)
+list1=Filter(Negate(is.null), list1)
+list1 <- list1[lengths(list1)!=0]
+
 # scina处理前准备
 exprMatrix <- as.matrix(Seurat::GetAssayData(obj.merge))
 # 关键步骤
-predictions.scina = SCINA::SCINA(exp = exprMatrix, signatures = list3,
+predictions.scina = SCINA::SCINA(exp = exprMatrix, signatures = list1,
                                  rm_overlap = F, allow_unknown = F)
 
 
 # 导入数据
-obj.merge@meta.data$scinamarker=factor(predictions.scina[["cell_labels"]],
+cellmarkergene=factor(predictions.scina[["cell_labels"]],
                                        levels = unique(predictions.scina[["cell_labels"]]))
-rm(list=ls()[ls()!='obj.merge'])
+rm(list=ls()[!ls() %in% c('obj.merge','scampcell','singleRcell','cellmarkergene')])
 gc()
 
+data_annotation <- data.frame(cellmarkergene=cellmarkergene,
+                              scampcell=scampcell,
+                              singleRcell=singleRcell)
 
-saveRDS(obj.merge,file='annotation1.rds')
+
+
+saveRDS(data_annotation,file='table_annotation.rds')
