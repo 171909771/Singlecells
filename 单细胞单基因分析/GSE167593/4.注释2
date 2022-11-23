@@ -1,8 +1,8 @@
 ################改名字
-obj.merge <- readRDS('umap_tsne.rds')
+
 ## scmap_cell
-scampcell <- data_annotation$scampcell
-scampcell=gsub("NPCs|aNSCs" ,"Neural progenitor cells",scampcell)
+scampcell=obj.merge@meta.data[["scmap_cell"]]
+scampcell=gsub("NPCs|aNSCs" ,"neural progenitor cells",scampcell)
 scampcell=gsub("Fibroblasts|Fibroblasts activated|Cardiomyocytes|Fibroblasts senescent" ,"Perivascular cells",scampcell)
 scampcell=gsub("NK cells|T cells|B cells" ,"Lymphocytes",scampcell)
 scampcell=gsub("Monocytes|Macrophages|Macrophages activated" ,"Monocytes/Macrophages",scampcell)
@@ -10,8 +10,8 @@ scampcell=gsub("Microglia|Microglia activated" ,"Microglia",scampcell)
 unique(scampcell)
 
 ## singleR_cell
-singleRcell <- data_annotation$singleRcell
-singleRcell=gsub("NPCs|aNSCs|qNSCs" ,"Neural progenitor cells",singleRcell)
+singleRcell=obj.merge@meta.data[["singleR_cell"]]
+singleRcell=gsub("NPCs|aNSCs|qNSCs" ,"neural progenitor cells",singleRcell)
 singleRcell=gsub("Fibroblasts|Fibroblasts activated|Cardiomyocytes|Fibroblasts senescent" ,"Perivascular cells",singleRcell)
 singleRcell=gsub("Microglia|Microglia activated" ,"Microglia",singleRcell)
 singleRcell=gsub("Monocytes|Macrophages|Macrophages activated" ,"Monocytes/Macrophages",singleRcell)
@@ -21,27 +21,26 @@ singleRcell=gsub("Astrocytes activated" ,"Astrocytes",singleRcell)
 unique(singleRcell)
 
 ## cellmarker
-cellmarkergene <- data_annotation$cellmarkergene
-cellmarkergene <- as.character(cellmarkergene)
+cellmarkergene=obj.merge@meta.data[["scinamarker"]]
 cellmarkergene[grep('neuron',ignore.case = T,cellmarkergene)]='Neurons'
-cellmarkergene=gsub("Purkinje cell|Pyramidal CA1 cell|Glutamatergic cell|Hippocampal CA1 cell|Claustrum pyramidal cell|Mossy cell|Neurogliaform cell|Cortex layer 6 pyramidal cell|Pyramidal cell|Upper layer 2 cell|Chandelier cell|CCK basket cell|Dentate gyrus granule cell|Long-projecting GABAergic cell|Martinotti cell|Basket cell|Cajal-Retzius cell" ,"Neurons",cellmarkergene)
-cellmarkergene=gsub("Neural progenitor cell|Late neuroblast|Hippocampal pyramidal precursor cell|Pan.neural stem cell|Early neuroblast|Quiescent neural stem cell|Neural progenitor cells|Neural stem cell|Late activated neural stem cell|Neuroblast|Activated neural stem cell" ,"Neural progenitor cells",cellmarkergene)
-cellmarkergene=gsub("Lamina terminalis astrocyte|Neonatal astrocyte|Astrocyte" ,"Astrocytes",cellmarkergene)
-cellmarkergene=gsub("Myelinating oligodendrocyte|Mature oligodendrocyte|Oligodendrocyte" ,"Oligodendrocytes",cellmarkergene)
-cellmarkergene=gsub("Vascular smooth muscle cell.VSMC.|Vascular leptomeningeal cell|Fibroblast|Pericyte|Smooth muscle cell|Mural cell" ,"Perivascular cells",cellmarkergene)
-cellmarkergene=gsub("Hemogenic endothelial cell|Endothelial cell" ,"Endothelial cells",cellmarkergene)
-cellmarkergene=gsub("Dendritic cell|Polydendrocyte|Plasmacytoid dendritic cell.pDC." ,"Dendritic cells",cellmarkergene)
-cellmarkergene=gsub("Ependymocyte|Tanycyte|Ependymal cell|Choroid plexus cell" ,"Ependymal cells",cellmarkergene)
-cellmarkergene=gsub("Innate lymphoid cell|T helper 17.Th17. cell|Lymphoid progenitor cell|Natural killer cell|T cell|T helper.Th. cell|B cell" ,"Lymphocytes",cellmarkergene)
-cellmarkergene=gsub("Microglia-like cell|Disease.associated microglial cell|Microglial cell|Activated microglial cell" ,"Microglia",cellmarkergene)
-cellmarkergene=gsub("M1 macrophage|Engrafted macrophage|Monocyte|Macrophage|Monocyte-derived macrophage|Infiltrating macrophage" ,"Monocytes/Macrophages",cellmarkergene)
-cellmarkergene=gsub("Granulocyte|Neutrophil" ,"Granulocytes",cellmarkergene)
-cellmarkergene=gsub("Newly formed oligodendrocyte|Immature oligodendrocyte|Oligodendrocytes progenitor cell|Oligodendrocytes precursor cell|Differentiating oligodendrocyte|Neuron-glial antigen 2.NG2. cell" ,"OPCs",cellmarkergene)
+cellmarkergene=gsub("Mossy cell|Hippocampal CA1 cell|Neurogliaform cell|Cortex layer 6 pyramidal cell|Pyramidal cell|Upper layer 2 cell|Chandelier cell|CCK basket cell|Dentate gyrus granule cell|Long-projecting GABAergic cell|Martinotti cell|Basket cell|Cajal-Retzius cell" ,"Neurons",cellmarkergene)
+cellmarkergene=gsub("Early neuroblast|Rhombic lip cell|Hippocampal pyramidal precursor cell|Pan-neural stem cell|Neural stem cell|Late activated neural stem cell|Neuroblast|Activated neural stem cell" ,"neural progenitor cells",cellmarkergene)
+cellmarkergene=gsub("Astroglial cell|Astrocyte" ,"Astrocytes",cellmarkergene)
+cellmarkergene=gsub("Oligodendrocyte|Myelinating oligodendrocyte|Newly formed oligodendrocyte" ,"Oligodendrocytes",cellmarkergene)
+cellmarkergene=gsub("Fibroblast|Pericyte|Smooth muscle cell|Mural cell" ,"Perivascular cells",cellmarkergene)
+cellmarkergene=gsub("Endothelial cell" ,"Endothelial cells",cellmarkergene)
+cellmarkergene=gsub("Conventional dendritic cell 1.cDC1.|Plasmacytoid dendritic cell.pDC." ,"Dendritic cells",cellmarkergene)
+cellmarkergene=gsub("Tanycyte|Ependymal cell|Choroid plexus cell" ,"Ependymal cells",cellmarkergene)
+cellmarkergene=gsub("T helper 17.Th17. cell|Natural killer cell|T cell|T helper.Th. cell|B cell" ,"Lymphocytes",cellmarkergene)
+cellmarkergene=gsub("Microglial cell|Activated microglial cell" ,"Microglia",cellmarkergene)
+cellmarkergene=gsub("Border-associated macrophage|M1 macrophage|Monocyte|Macrophage|Monocyte-derived macrophage|Infiltrating macrophage" ,"Monocytes/Macrophages",cellmarkergene)
+cellmarkergene=gsub("Neutrophil" ,"Granulocytes",cellmarkergene)
+cellmarkergene=gsub("NG2-glia cell|Oligodendrocytes precursor cell|Neuron-glial antigen 2.NG2. cell" ,"OPCs",cellmarkergene)
 cellmarkergene[grep('Lymphocy',ignore.case = T, cellmarkergene)]='Lymphocytes'
 unique(cellmarkergene)
 
 
-data_annotation=data.frame("scampcell"=scampcell, "singleRcell"=singleRcell, "cellmarkergene"=cellmarkergene)
+data1=data.frame("scampcell"=scampcell, "singleRcell"=singleRcell, "cellmarkergene"=cellmarkergene)
 
 
 ## 组合的合并函数
@@ -54,25 +53,37 @@ get_consensus_label <- function(labels){
   return(label)
 }
 
-tmp=apply(data_annotation,1, get_consensus_label)
+tmp=apply(data1,1, get_consensus_label)
 
-obj.merge@meta.data$celltype=factor(tmp,levels = unique(tmp))
+obj.merge@meta.data$finalcluster=factor(tmp,levels = unique(tmp))
 
 ## 获得最后的数据
-obj.merge=subset(obj.merge,celltype!='ambiguous')
-obj.merge@meta.data$celltype=droplevels(obj.merge@meta.data$celltype)
-gc()
+obj.mergef=subset(obj.merge,finalcluster!='ambiguous')
+obj.mergef@meta.data$finalcluster=droplevels(obj.mergef@meta.data$finalcluster)
 
+saveRDS(obj.mergef,file='finalcluster.rds')
 
+# 整合数据
+obj.mergef=readRDS('finalcluster.rds')
+## 分组
+obj.mergef@meta.data$celltype.group=gsub('control','Sham',obj.mergef@meta.data[["group"]]) %>% gsub('IS','MCAO',.)
 ## 提取每组细胞不小于5的细胞的cluster
-tmp <- table(obj.merge@meta.data[["celltype"]],obj.merge@meta.data[["tmp"]]) 
-clusterremain <- levels(obj.merge@meta.data[["celltype"]])[rowSums(tmp>5)==2]
-Idents(obj.merge) <- obj.merge@meta.data[["celltype"]]
-obj.merge=subset(x = obj.merge, idents =clusterremain)
-obj.merge@meta.data[["celltype"]]=droplevels(obj.merge@meta.data[["celltype"]])
+tmp <- table(obj.mergef@meta.data[["finalcluster"]],obj.mergef@meta.data[["celltype.group"]]) 
+clusterremain <- levels(obj.mergef@meta.data[["finalcluster"]])[rowSums(tmp>5)==2]
+Idents(obj.mergef) <- obj.mergef@meta.data[["finalcluster"]]
+obj.mergef1=subset(x = obj.mergef, idents =clusterremain)
+obj.mergef1@meta.data[["tmp"]]=droplevels(obj.mergef1@meta.data[["finalcluster"]])
 
-rm(list=ls()[ls()!='obj.merge'])
+rm(list=ls()[ls()!='obj.mergef1'])
 gc()
-saveRDS(obj.merge,file='prunnedcelltype.rds')
+saveRDS(obj.mergef1,file='prunnedfinalcluster.rds')
 
-DimPlot(obj.merge,reduction = 'umap',group.by = 'tmp')
+
+## 画图看下聚类效果
+DimPlot(obj.mergef1, reduction = "tsne", label = T, group.by = 'finalcluster')
+library(ggplot2)
+library(cowplot)
+library(patchwork)
+plots <- VlnPlot(obj.mergef1,slot = 'data',features = c("P2ry12"), split.by = "celltype.group", group.by = "tmp",
+                 pt.size = 0, combine = FALSE)
+wrap_plots(plots = plots, ncol = 1)
