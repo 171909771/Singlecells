@@ -130,7 +130,7 @@ list1=Filter(Negate(is.null), list1)
 list1 <- list1[lengths(list1)!=0]
 
 # scina处理前准备
-exprMatrix <- as.matrix(Seurat::GetAssayData(obj.merge))
+exprMatrix <- as.matrix(obj.merge@assays[["alra"]]@data)
 # 关键步骤
 predictions.scina = SCINA::SCINA(exp = exprMatrix, signatures = list1,
                                  rm_overlap = F, allow_unknown = F)
