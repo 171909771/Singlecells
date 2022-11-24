@@ -21,7 +21,7 @@ list3=lapply(list2, function(x){
 })
 
 ## 2.去除querydata中没有的gene
-gene1=rownames(obj.merge)
+gene1=rownames(sce.list)
 list3=lapply(list3, function(x){
   x=x[x%in% gene1]
   if(length(x)>0){
@@ -31,7 +31,7 @@ list3=lapply(list3, function(x){
 ## 3.数据集中大于200的基因进行seurat的FindVariableFeatures提取高变异基因200个
 list3=lapply(list3, function(x){
   if(length(x)>200){
-    tmp=obj.merge[x,]
+    tmp=sce.list[x,]
     tmp <- FindVariableFeatures(tmp, selection.method = "vst", nfeatures = 200)
     return(tmp@assays[["alra"]]@var.features)
   }
@@ -40,7 +40,7 @@ list3=lapply(list3, function(x){
 ## 4.去除NULL的list
 list3=Filter(Negate(is.null), list3)
 # scina处理前准备
-exprMatrix <- as.matrix(Seurat::GetAssayData(obj.merge))
+exprMatrix <- as.matrix(sce.list@assays[["alra"]]@data)
 # 关键步骤
 predictions.scina = SCINA::SCINA(exp = exprMatrix, signatures = list3,
                                  rm_overlap = F, allow_unknown = F)
@@ -72,7 +72,7 @@ list3=lapply(list2, function(x){
   x=unique(x)
 })
 
-gene1=rownames(obj.merge)
+gene1=rownames(sce.list)
 list3=lapply(list3, function(x){
   x=x[x%in% gene1]
   if(length(x)>0){
@@ -82,7 +82,7 @@ list3=lapply(list3, function(x){
 
 list3=lapply(list3, function(x){
   if(length(x)>200){
-    tmp=obj.merge[x,]
+    tmp=sce.list[x,]
     tmp <- FindVariableFeatures(tmp, selection.method = "vst", nfeatures = 200)
     return(tmp@assays[["alra"]]@var.features)
   }
@@ -91,58 +91,8 @@ list3=lapply(list3, function(x){
 
 list3=Filter(Negate(is.null), list3)
 
-exprMatrix <- as.matrix(Seurat::GetAssayData(obj.merge))
-
-predictions.scina.laopo = SCINA::SCINA(exp = exprMatrix, signatures = list3,
-                                 rm_overlap = F, allow_unknown = F)
-
-
-############test############test############test############test############test
-##### panglao的ref制作##### panglao的ref制作##### panglao的ref制作##### panglao的ref制作
-# https://panglaodb.se/markers.html?cell_type=%27choose%27
-ref1=read.delim('PanglaoDB_markers_27_Mar_2020.tsv.gz')
-# 从数据库中提取脑白质成分
-ref2=subset(ref1,organ=='Brain' 
-            |organ=='Brain'
-            |organ=='Immune system'
-            |organ=='Smooth muscle'
-            |organ=='Vasculature')
-ref2=ref2[grep('mm',ignore.case = T,ref2$species),]
-dat3=ref2[c('cell.type','official.gene.symbol')]
-names(dat3)=c('Cell name','Marker')
-dat3$Marker=tolower(dat3$Marker)
-library(Hmisc)
-dat3$Marker=capitalize(dat3$Marker)
-list1= split(dat3, dat3$`Cell name`)
-list2=lapply(list1, function(x){
-  x$Marker
-  
-})
-
-list3=lapply(list2, function(x){
-  x=unique(x)
-})
-
-gene1=rownames(obj.merge)
-list3=lapply(list3, function(x){
-  x=x[x%in% gene1]
-  if(length(x)>0){
-    return(x)
-  }
-})
-
-list3=lapply(list3, function(x){
-  if(length(x)>200){
-    tmp=obj.merge[x,]
-    tmp <- FindVariableFeatures(tmp, selection.method = "vst", nfeatures = 200)
-    return(tmp@assays[["alra"]]@var.features)
-  }
-  return(x)
-})
-
-list3=Filter(Negate(is.null), list3)
-
-exprMatrix <- as.matrix(Seurat::GetAssayData(obj.merge))
+exprMatrix <- as.matrix(sce.list@assays[["alra"]]@data)
 
 predictions.scina.laopo = SCINA::SCINA(exp = exprMatrix, signatures = list3,
                                        rm_overlap = F, allow_unknown = F)
+
