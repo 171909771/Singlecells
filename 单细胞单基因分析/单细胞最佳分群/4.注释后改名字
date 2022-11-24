@@ -78,3 +78,5 @@ panglaogene=gsub("Macrophages|Microglia" ,"Micro-PVM",panglaogene)
 data1=data.frame("scampcluster"=scampcluster, "scampcell"=scampcell, 
                  "singleRcell"=singleRcell, "cellmarkergene"=cellmarkergene, 
                  "panglaogene"=panglaogene, "nativegene"=nativegene)
+
+saveRDS(data1,file = 'annotationtable.rds')
