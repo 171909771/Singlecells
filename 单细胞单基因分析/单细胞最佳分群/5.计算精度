@@ -42,3 +42,5 @@ resultcombine=sapply(clustercombi, function(x){
 
 resultcombine=data.frame(t(resultcombine))
 resultcombine$dropout <- as.numeric(resultcombine$dropout)
+
+saveRDS(resultcombine,file = 'annotationaccuracy.rds')
