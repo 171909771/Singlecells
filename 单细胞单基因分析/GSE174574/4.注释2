@@ -26,7 +26,7 @@ cellmarkergene <- as.character(cellmarkergene)
 cellmarkergene[grep('neuron',ignore.case = T,cellmarkergene)]='Neurons'
 cellmarkergene=gsub("Purkinje cell|Pyramidal CA1 cell|Glutamatergic cell|Hippocampal CA1 cell|Claustrum pyramidal cell|Mossy cell|Neurogliaform cell|Cortex layer 6 pyramidal cell|Pyramidal cell|Upper layer 2 cell|Chandelier cell|CCK basket cell|Dentate gyrus granule cell|Long-projecting GABAergic cell|Martinotti cell|Basket cell|Cajal-Retzius cell" ,"Neurons",cellmarkergene)
 cellmarkergene=gsub("Neural progenitor cell|Late neuroblast|Hippocampal pyramidal precursor cell|Pan.neural stem cell|Early neuroblast|Quiescent neural stem cell|Neural progenitor cells|Neural stem cell|Late activated neural stem cell|Neuroblast|Activated neural stem cell" ,"Neural progenitor cells",cellmarkergene)
-cellmarkergene=gsub("Lamina terminalis astrocyte|Neonatal astrocyte|Astrocyte" ,"Astrocytes",cellmarkergene)
+cellmarkergene=gsub("Bergmann glial cell|Lamina terminalis astrocyte|Neonatal astrocyte|Astrocyte" ,"Astrocytes",cellmarkergene)
 cellmarkergene=gsub("Myelinating oligodendrocyte|Mature oligodendrocyte|Oligodendrocyte" ,"Oligodendrocytes",cellmarkergene)
 cellmarkergene=gsub("Vascular smooth muscle cell.VSMC.|Vascular leptomeningeal cell|Fibroblast|Pericyte|Smooth muscle cell|Mural cell" ,"Perivascular cells",cellmarkergene)
 cellmarkergene=gsub("Hemogenic endothelial cell|Endothelial cell" ,"Endothelial cells",cellmarkergene)
