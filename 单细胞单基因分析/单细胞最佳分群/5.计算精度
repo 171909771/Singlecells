@@ -33,9 +33,12 @@ resultcombine=sapply(clustercombi, function(x){
   a=paste(x,collapse = '-')
   tmp=apply(data1[x],1, get_consensus_label)
   tmpdata=data.frame(cbind(data1$nativegene,tmp))
+  n=sum(tmpdata$tmp=='ambiguous')
   tmpdata=tmpdata[tmpdata$tmp!='ambiguous',]
+  
   value=accuracy(tmpdata[1], tmpdata[2])
-  return(c('name'=a,'value'=value))
+  return(c('name'=a,'value'=value,'dropout'=n))
 })
 
 resultcombine=data.frame(t(resultcombine))
+resultcombine$dropout <- as.numeric(resultcombine$dropout)
