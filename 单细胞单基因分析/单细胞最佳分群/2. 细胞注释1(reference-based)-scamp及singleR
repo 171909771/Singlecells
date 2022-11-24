@@ -10,7 +10,7 @@ suppressMessages(library(scuttle))
 suppressMessages(library(scran))
 suppressMessages(library(Seurat))
 
-obj.merge=sce.list
+
 
 
 mouseRNA <- MouseRNAseqData()
@@ -29,7 +29,7 @@ ref_sce <- SingleCellExperiment(assays=list(logcounts=assays(ref)$logcounts),
 # 找变异基因，top500
 dec <- modelGeneVar(ref_sce)
 top.hvgs2 <- getTopHVGs(dec, n=500)
-top.hvgs2=top.hvgs2[top.hvgs2 %in% rownames(obj.merge)]
+top.hvgs2=top.hvgs2[top.hvgs2 %in% rownames(sce.list)]
 # 导入数据种
 ref_sce <- setFeatures(ref_sce, features =top.hvgs2)
 # 按照cluster计算,相当于是中心化ref数据中不同的细胞类型
@@ -41,7 +41,7 @@ scmap_cell_reference <- metadata(ref_sce)$scmap_cell_index
 scmap_cell_metadata <- colData(ref_sce)
 
 
-query_sce <- SingleCellExperiment::SingleCellExperiment(assays=list(counts=obj.merge@assays[["alra"]]@data))
+query_sce <- SingleCellExperiment::SingleCellExperiment(assays=list(counts=sce.list@assays[["alra"]]@data))
 rowData(query_sce)$feature_symbol <- rownames(query_sce)
 logcounts(query_sce)=query_sce@assays@data@listData[["counts"]]
 
@@ -85,4 +85,3 @@ colData(query_sce)$singleR_cell <- predictions$pruned.labels
 par(mar=c(13, 4, 2, 0))
 barplot(table(predictions$pruned.labels), las=2)
 scater::plotReducedDim(query_sce, dimred="UMAP", colour_by="singleR_cell")
-
