@@ -1,0 +1,173 @@
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+library(meta)
+library(HardyWeinberg)
+options (warn = -1)
+## 取不同细胞类型的基因集
+obj1 <- readRDS('GSE167593mcao24single/prunnedcelltype.rds')
+obj2 <- readRDS('GSE174574/prunnedcelltype.rds')
+
+# 取共同有的基因，并用meta方法进行合并
+shareindex <- levels(obj1@meta.data[["celltype"]])[levels(obj1@meta.data[["celltype"]]) %in% 
+                                                     levels(obj2@meta.data[["celltype"]])]
+names(shareindex) <- shareindex
+typename=c('MCAO','Sham')
+names(typename)=typename
+
+p2group <- lapply(typename, function(z){
+  
+  
+  p2celltype <- lapply(shareindex,function(x){
+    
+    tmp_type1 <- obj1@meta.data[["celltype"]]==x & obj1@meta.data[["tmp"]]==z
+    tmp_data1 <- data.frame(obj1[,tmp_type1]@assays[["alra"]]@data)
+    n1 <- sum(tmp_type1)
+    
+    tmp_type2 <- obj2@meta.data[["celltype"]]==x & obj2@meta.data[["tmp"]]==z
+    tmp_data2 <- data.frame(obj2[,tmp_type2]@assays[["alra"]]@data)
+    n2 <- sum(tmp_type2)
+    
+    tmp_P2_1 <- as.numeric(tmp_data1['P2ry12',])
+    tmp_P2_2 <- as.numeric(tmp_data2['P2ry12',])
+    
+    tmp_cor_1 <- cor(tmp_P2_1,t(tmp_data1))
+    tmp_cor_2 <- cor(tmp_P2_2,t(tmp_data2))
+    
+    tmp_cor_1=data.frame(value=t(tmp_cor_1))
+    tmp_cor_1$genenames=rownames(tmp_cor_1)
+    
+    tmp_cor_2=data.frame(value=t(tmp_cor_2))
+    tmp_cor_2$genenames=rownames(tmp_cor_2)
+    
+    tmp_merge <- merge(tmp_cor_1,tmp_cor_2,'genenames',suffixes = c("GSE167593","GSE174574"))
+    tmp <- apply(tmp_merge,1,function(y){
+      if(sum(is.na(y))==2){
+        c(y[1],NaN)
+      }
+      
+      else if(sum(is.na(y))==1){
+        c(y[!is.na(y)])
+      }
+      
+      else if(y[2]==y[3]){
+        c(y[1],y[2])
+      }
+      else if( abs(as.numeric(y[2])) < 0.5 & abs(as.numeric(y[3])) < 0.5){
+        c(y[1],NaN)
+      }
+      
+      else{
+        tmp <- metacor(c(as.numeric(y[2]),as.numeric(y[3])),c(n1,n2))
+        postcor <- ifisherz(tmp[["TE.random"]])   #必须将 Fish z 转换为 相关系数，这个function就是inversion
+        final=c(y[1],postcor)}
+    })
+    tmp <- data.frame(t(tmp))
+    colnames(tmp)=c('genenames','value')
+    tmp$value <- as.numeric(tmp$value)
+    tmp
+  })
+  
+  
+})
+
+### 整理数据，取相关系数绝对值大于0.6的所有基因
+geneset1 <- lapply(p2group, function(x){
+  lapply(x, function(y){
+    tmp = na.omit(y)
+    tmp=tmp[abs(tmp[["value"]])>0.6,]
+    tmp[order(tmp[2],decreasing = T),]
+    
+  })})
+
+
+# 取非共同的基因
+
+resid1 <- levels(obj1@meta.data[["celltype"]])[!levels(obj1@meta.data[["celltype"]]) %in% shareindex]
+resid2 <- levels(obj2@meta.data[["celltype"]])[!levels(obj2@meta.data[["celltype"]]) %in% shareindex]
+names(resid1) <- resid1
+names(resid2) <- resid2
+
+## 取GSE167593
+p2groupresid1 <- lapply(typename, function(z){
+  
+  
+  p2celltype <- lapply(resid1,function(x){
+    
+    tmp_type1 <- obj1@meta.data[["celltype"]]==x & obj1@meta.data[["tmp"]]==z
+    tmp_data1 <- data.frame(obj1[,tmp_type1]@assays[["alra"]]@data)
+    n1 <- sum(tmp_type1)
+    
+    
+    
+    tmp_P2_1 <- as.numeric(tmp_data1['P2ry12',])
+    
+    
+    tmp_cor_1 <- cor(tmp_P2_1,t(tmp_data1))
+    
+    
+    tmp_cor_1=data.frame(value=t(tmp_cor_1))
+    tmp_cor_1$genenames=rownames(tmp_cor_1)
+    tmp_cor_1[c(2,1)]
+    
+  })
+  
+  
+})
+
+## 取GSE174574
+p2groupresid2 <- lapply(typename, function(z){
+  
+  
+  p2celltype <- lapply(resid2,function(x){
+    
+    
+    
+    tmp_type2 <- obj2@meta.data[["celltype"]]==x & obj2@meta.data[["tmp"]]==z
+    tmp_data2 <- data.frame(obj2[,tmp_type2]@assays[["alra"]]@data)
+    n2 <- sum(tmp_type2)
+    
+    
+    tmp_P2_2 <- as.numeric(tmp_data2['P2ry12',])
+    
+    
+    tmp_cor_2 <- cor(tmp_P2_2,t(tmp_data2))
+    
+    
+    
+    tmp_cor_2=data.frame(value=t(tmp_cor_2))
+    tmp_cor_2$genenames=rownames(tmp_cor_2)
+    tmp_cor_2[c(2,1)]
+  })
+  
+  
+})
+
+
+
+### 整理数据，取相关系数绝对值大于0.6的所有基因
+geneset2 <- lapply(p2groupresid1, function(x){
+  lapply(x, function(y){
+    tmp = na.omit(y)
+    tmp=tmp[abs(tmp[["value"]])>0.6,]
+    tmp[order(tmp[2],decreasing = T),]
+    
+  })})
+
+geneset3 <- lapply(p2groupresid2, function(x){
+  lapply(x, function(y){
+    tmp = na.omit(y)
+    tmp=tmp[abs(tmp[["value"]])>0.6,]
+    tmp[order(tmp[2],decreasing = T),]
+    
+  })})
+
+
+
+p2_for_micrglia_0.6 <- merge(geneset1[["MCAO"]][["Microglia"]],
+                             geneset1[["Sham"]][["Microglia"]],
+                             'genenames',
+                             suffixes = c(".MCAO",".Sham"))
+
+saveRDS(p2_for_micrglia_0.6,file = 'p2_for_micrglia_0.6.rds')
+
