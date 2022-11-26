@@ -1,5 +1,85 @@
 
-# 计算bulk数据中的相关基因 ----------------------------------------------------------
+# 1.整理GSE77986数据 ------------------------------------------------------------
+library(limma)
+library(edgeR)
+## 读取数据并转换一直的变量，改变dat1名称
+dat=read.delim("GSE77986bulk-MM-microglia/GSE77986_series_matrix.txt.gz",header = T,comment.char = "!")
+# library(devtools)
+# install_github("jmzeng1314/AnnoProbe")
+library(AnnoProbe)
+gpl='GPL16570'
+## 可以更换type信息，具体查看?idmap
+probe2gene=idmap(gpl,type = 'soft')
+head(probe2gene)
+
+# 整理数据
+dat1=merge(dat,probe2gene,by.x="ID_REF",by.y="ID")
+dat <- aggregate(x = dat1[,2:(length(dat1)-1)],
+                 by = list(dat1$symbol),
+                 FUN = mean)
+rownames(dat)=dat$Group.1
+dat$Group.1=NULL
+
+
+dat1 <- dat[c(1,2,3,7,8,9,10,11)]
+colnames(dat1) <- c(paste(rep('Shamrep',3),1:3,sep = ""),paste(rep('MCAOrep',5),1:5,sep = ""))
+dat1_GSE77986 <- dat1
+
+
+
+# 2.整理GSE172456数据 -----------------------------------------------------------
+
+library(limma)
+library(edgeR)
+## 读取数据并转换一直的变量，改变dat1名称
+# dat=read.delim("GSE172456_Raw_gene_counts_matrix.csv.gz",header = T,comment.char = "!")
+dat=read.csv("GSE172456bulk-timeseries--MM-microglia/GSE172456_Raw_gene_counts_matrix.csv.gz",header = T,comment.char = "!")
+# library(devtools)
+# install_github("jmzeng1314/AnnoProbe")
+library(AnnoProbe)
+rownames(dat) <- dat$X
+dat$X <- NULL
+
+
+# DESeq2归一化 
+library(tidyverse)
+library(DESeq2)
+dat1 <- dat[1:4]
+coldata <-data.frame(row.names = colnames(dat1),condition=str_split(colnames(dat1),'M',simplify = T)[,1])
+dds <- DESeqDataSetFromMatrix(dat1, coldata, design= ~ condition )
+dds <- DESeq(dds) 
+dat2 <- counts(dds, normalized=TRUE)
+dat2 <- log(dat2+1)
+dat2 <- data.frame(dat2)
+dat2_GSE172456 <- dat2
+
+
+# 3.整理数据上传网站合并矩阵 ------------------------------------------------------------------
+
+
+# http://www.badd-cao.net/cgi-bin/rank-in/calculate.py
+# 用上面网站进行合并
+
+dat1_GSE77986$genename <- rownames(dat1_GSE77986)
+dat2_GSE172456$genename <- rownames(dat2_GSE172456)
+
+
+dat_merge <- merge(dat1_GSE77986,dat2_GSE172456,by='genename')
+colnames(dat_merge)[1]='gene'
+
+
+
+write.table(dat_merge,"ExampleExpressionData.txt",sep="\t",row.names=FALSE,quote = F)
+
+dat_platform <- data.frame(sample_name=colnames(dat_merge)[-1],	Platform=c(rep(1,8),rep(2,4)))
+
+write.table(dat_platform,"ExamplePlatformData.txt",sep="\t",row.names=FALSE,quote = F)
+
+dat_class <- data.frame(sample_name=colnames(dat_merge)[-1]	,Class=c(1,1,1,2,2,2,2,2,1,1,2,2))
+
+write.table(dat_class,"ExampleSampleClass.txt",sep="\t",row.names=FALSE,quote = F)
+
+# 4.计算bulk数据中的相关基因 ----------------------------------------------------------
 
 
 dat <- read.table('GSE77986andGSE172456/result_exp.txt')
@@ -29,7 +109,7 @@ cor_dat_pro_merge <- cor_dat_pro_merge[order(cor_dat_pro_merge$plusvalue,decreas
 
 
 
-# mhg分析确立基因集 --------------------------------------------------------------
+# 5.mhg分析确立基因集 --------------------------------------------------------------
 
 
 
