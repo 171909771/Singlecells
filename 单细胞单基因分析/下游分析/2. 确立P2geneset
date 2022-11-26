@@ -1,0 +1,53 @@
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+library(meta)
+library(HardyWeinberg)
+options (warn = -1)
+
+# 导入基因集
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+
+## 设置基因cutoff
+p2gene <- subset(p2gene,value.MCAO>0.8 &value.Sham >0.8)
+
+
+p2gene$rank <- abs(p2gene$value.MCAO)+abs(p2gene$value.Sham)
+p2gene <- p2gene[order(p2gene$rank,decreasing = T),]
+p2gene_name <- p2gene$genenames
+
+
+
+# 取不同细胞类型的基因集
+obj1 <- readRDS('GSE167593mcao24single/prunnedcelltype.rds')
+obj2 <- readRDS('GSE174574/prunnedcelltype.rds')
+
+## scale P2基因集
+DefaultAssay(obj1) <- 'alra'
+DefaultAssay(obj2) <- 'alra'
+obj1 <- ScaleData(obj1,features = p2gene_name)
+obj2 <- ScaleData(obj2,features = p2gene_name)
+
+
+## 计算每一组的中位数
+obj <- list(obj1,obj2)
+
+wcl <- lapply(obj, function(z){
+  celltype <- levels(z@meta.data[["celltype"]])
+  names(celltype) <- celltype
+  
+  tmp <- levels(z@meta.data[["tmp"]])
+  names(tmp) <- tmp
+
+  lapply(tmp,function(x){
+    lapply(celltype,function(y){
+      test.sham <- subset(z,tmp==x & celltype==y)
+      test.sham <- test.sham[p2gene_name,]
+      test.sham.alra <- as.numeric(test.sham@assays[["alra"]]@scale.data)
+      median(test.sham.alra)
+    }) 
+  })
+})
+
+
+
