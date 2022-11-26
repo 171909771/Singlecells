@@ -1,0 +1,78 @@
+
+# 计算bulk数据中的相关基因 ----------------------------------------------------------
+
+
+dat <- read.table('GSE77986andGSE172456/result_exp.txt')
+dat_sham <- dat[1:5]
+dat_mcao <- dat[6:12]
+
+
+####  整理数据，获取mcao、sham P2共表达基因
+p2_dat_sham <- as.numeric(dat_sham['P2ry12',])
+p2_dat_mcao <- as.numeric(dat_mcao['P2ry12',])
+
+cor_dat_sham <- cor(p2_dat_sham,t(dat_sham))
+cor_dat_sham <- data.frame(t(cor_dat_sham))
+cor_dat_sham$genename <- rownames(cor_dat_sham)
+
+cor_dat_mcao <- cor(p2_dat_mcao,t(dat_mcao))
+cor_dat_mcao <- data.frame(t(cor_dat_mcao))
+cor_dat_mcao$genename <- rownames(cor_dat_mcao)
+
+
+cor_dat_sham_pro <- subset(cor_dat_sham,t.cor_dat_sham.>0.6)
+cor_dat_mcao_pro <- subset(cor_dat_mcao,t.cor_dat_mcao.>0.6)
+
+cor_dat_pro_merge <- merge(cor_dat_sham_pro,cor_dat_mcao_pro,by='genename')
+cor_dat_pro_merge$plusvalue <- cor_dat_pro_merge$t.cor_dat_sham.+cor_dat_pro_merge$t.cor_dat_mcao.
+cor_dat_pro_merge <- cor_dat_pro_merge[order(cor_dat_pro_merge$plusvalue,decreasing = T),]
+
+
+
+# mhg分析确立基因集 --------------------------------------------------------------
+
+
+
+## mhg函数建立
+library(mHG)
+minhgeo=function(bulkgene,singlegene,p,n=length(singlegene)){
+  bulkgene.p=bulkgene[1:round(length(bulkgene)*p*0.01)]
+  singlegene.n=head(singlegene,n)
+  tmp= bulkgene.p %in% singlegene.n
+  result <- mHG.test(tmp)[["p.value"]]}
+
+## 导入p2基因集
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+
+## 计算mhg的p值，单细胞的相关性从0.6-0.99，以0.01个单位增加；bulk的比例从前10%-50%，以1个单位增加
+porport<- seq(0.6,0.99,0.01)
+names(porport)=porport
+topp <- seq(10,50,1)
+names(topp)=topp
+result <- lapply(topp, function(x){
+  lapply(porport, function(y){
+    p2gene_tmp <- subset(p2gene,value.MCAO>y &value.Sham >y)
+    test <- minhgeo(cor_dat_pro_merge$genename,p2gene_tmp$genenames,x)
+
+  })
+
+})
+
+## 整理数据，画图
+result <- do.call(rbind,lapply(result,data.frame))
+result1 <- result
+result1$class <- rownames(result1)
+library(reshape2)
+result2 <- melt(result1,'class')
+result2$variable <- str_split(result2$variable,'X',simplify = T)[,2]
+result2$variable <- as.numeric(result2$variable)
+ggplot(result2,aes(x=variable,y=value))+geom_point()+geom_smooth()
+
+
+## 尝试取阈值。用alra的方法，将尾巴0.8后面的方差稳定的数值进行取标准差及平均数，
+## 再用用所有数值根据前面的标准差及平均数取z-score，最后取第一个小于3倍标准差的index。
+test <- apply(result, 2, sd)
+sigma <- sd(test[21:40])
+mu <- mean(test[21:40])
+test1 <- (test-mu)/sigma
+plot(seq(0.6,0.99,0.01),test)
