@@ -1,0 +1,381 @@
+---
+title: "P2ry12"
+author: "WCL"
+date: '2022-11-18'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+knitr::opts_knit$set(root.dir = '~/test')
+```
+研究P2在MCAO状态下对小胶质细胞的影响。
+# introduction
+1. 由于P2是凝血相关基因，不能通过外界手段对其敲除后进行分析，而细胞实验有脱离了体内模拟环境的影响。
+2. P2虽然已经被认为是小胶质细胞特有的marker基因，但是仍然有研究表明其在其他类型细胞中表达，表达情况不清楚
+3. P2基因在小胶质细胞中的表达已经在很多脑疾病状态下研究，但是其在MCAO中的表达情况及其功能仍然没有研究
+
+为了探讨P2在MCAO状态中的表达情况及功能，本研究利用单细胞MCAO数据，获取在正常-疾病状态下P2共表达基因集，再在小胶质细胞分选后bulk测序数据中对其进行验证。而后我们对基因集进行功能分析，并在单细胞拟时序分析中了解其基因集表达水平变化的情况，最终我们进行实验验证。
+
+
+
+
+# Methods
+## Querying a single-cell expression dataset
+
+
+
+# Results
+## Demographic characteristics of single-cell transcriptomic datasets associated with MCAO
+1.分别对2个数据集进行分析，我们应用我们之前的注释方法，我们确立了不同的亚群
+
+2.为了了解P2在不同亚群中的表达情况，我们分别对2个数据集中P2的表达量进行分析，发现P2主要表达在MG中，约50%的细胞都表达。此外我们发现P2在其他细胞类型中的非0占比变化不同（范围）。这些结果表明MCAO中P2的影响可能来自多种细胞。
+
+
+
+```{r lib,include=F}
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+library(ggsci)
+library(ggridges)
+library(reshape2)
+```
+
+```{r GSE167593_load_data}
+dat=readRDS('GSE167593mcao24single/prunnedcelltype.rds')
+```
+
+```{r GSE167593_datashow, fig.width = 16, fig.height = 9,fig.fullwidth = TRUE,out.width='100%'}
+
+tmp <- data.frame(table(dat@meta.data[["tmp"]],dat@meta.data[["celltype"]]))
+colnames(tmp) <- c('Group','Cluster','Counts')
+
+p1 <- DimPlot(dat,group.by = "tmp",reduction = 'tsne')+labs(title = NULL)+
+  scale_color_nejm()+theme(legend.position = c(0.01,0.1),legend.key.size = unit(3, 'mm'))+coord_fixed(ratio = 1)
+
+p2 <- DimPlot(dat,group.by = "celltype",reduction = 'tsne')+ggtitle("")+
+  theme(legend.position = c(0.86,.87),legend.key.size = unit(3, 'mm'))+
+  scale_color_aaas(labels = c("LYM","OLG","MG","NPC","Mo/Ma","NE","AS","GRA","EpC"))+
+  coord_fixed(ratio = 1)
+
+p3 <- FeaturePlot(dat, features = "P2ry12",reduction = 'tsne')+
+  scale_colour_gradientn(colours = c("purple", "yellow"))+
+  theme(legend.position = c(.85,.95))+
+  coord_fixed(ratio = 1)
+
+p4 <-ggplot(tmp, aes(x = Cluster, y = Counts, group = Group))+
+  geom_col(aes(fill = Group), position = 'fill') +p1$theme+
+   geom_text(aes(label = Counts), position = position_fill(vjust = .5))+
+  scale_fill_nejm()+labs(y='Proportion',x='Cell type')+
+  theme(legend.direction='horizontal',legend.position = c(0.65,0.99),legend.title=element_blank())+
+  scale_x_discrete(labels=c("LYM","OLG","MG","NPC","Mo/Ma","NE","AS","GRA","EpC"))
+
+
+
+tmp1 <- data.frame(Value=as.numeric(dat['P2ry12',]@assays[["RNA"]]@data),
+                   Group=dat['P2ry12',]@meta.data[["tmp"]],
+                   Type=dat['P2ry12',]@meta.data[["celltype"]])
+
+p5 <- ggplot(tmp1, aes(x=Value, y=Type, fill=Group)) +p4$theme+
+  geom_density_ridges()+
+  scale_fill_nejm(alpha = 0.6)+
+  theme(legend.title=element_blank(),legend.position = c(0.62,.95))+
+  labs(x='P2ry12 gene expression',y='Density')+
+  scale_y_discrete(labels=c("LYM","OLG","MG","NPC","Mo/Ma","NE","AS","GRA","EpC"))
+
+(p1+p2+p3)/(p4+p5)
+```
+
+```{r GSE167593_P2datatable, fig.width = 16, fig.height = 9, fig.fullwidth = TRUE,out.width='100%'}
+
+tab1<- suppressMessages(tmp1 %>% group_by(Type,Group) %>% 
+                                    summarise(Min.=fivenum(Value)[1],
+                                              '1stQ'=fivenum(Value)[2],
+                                              Median=fivenum(Value)[3],
+                                              '3stQ'=fivenum(Value)[4],
+                                              Max.=fivenum(Value)[5],
+                                              Mean=mean(Value),
+                                              Dropout=sum(Value!=0)/length(Value)))
+
+knitr::kable(tab1)
+```
+
+
+```{r GSE174574_load_data}
+dat=readRDS('GSE174574/prunnedcelltype.rds')
+```
+
+```{r GSE174574_datashow, fig.width = 16, fig.height = 9,fig.fullwidth = TRUE,out.width='100%'}
+
+tmp <- data.frame(table(dat@meta.data[["tmp"]],dat@meta.data[["celltype"]]))
+colnames(tmp) <- c('Group','Cluster','Counts')
+
+p1 <- DimPlot(dat,group.by = "tmp",reduction = 'tsne')+labs(title = NULL)+
+  scale_color_nejm()+theme(legend.position = c(0.01,0.1),legend.key.size = unit(3, 'mm'))+coord_fixed(ratio = 1)
+
+p2 <- DimPlot(dat,group.by = "celltype",reduction = 'tsne')+ggtitle("")+
+  theme(legend.position = c(0.86,.87),legend.key.size = unit(3, 'mm'))+
+  scale_color_aaas(labels = c("EC","Mo/Ma","EpC","MG","OLG","AS","PC","LYM","GRA","NPC"))+
+  coord_fixed(ratio = 1)
+
+
+
+
+p3 <- FeaturePlot(dat, features = "P2ry12",reduction = 'tsne')+
+  scale_colour_gradientn(colours = c("purple", "yellow"))+
+  theme(legend.position = c(.85,.95))+
+  coord_fixed(ratio = 1)
+
+p4 <-ggplot(tmp, aes(x = Cluster, y = Counts, group = Group))+
+  geom_col(aes(fill = Group), position = 'fill') +p1$theme+
+   geom_text(aes(label = Counts), position = position_fill(vjust = .5))+
+  scale_fill_nejm()+labs(y='Proportion',x='Cell type')+
+  theme(legend.direction='horizontal',legend.position = c(0.65,0.99),legend.title=element_blank())+
+  scale_x_discrete(labels=c("EC","Mo/Ma","EpC","MG","OLG","AS","PC","LYM","GRA","NPC"))
+
+tmp1 <- data.frame(Value=as.numeric(dat['P2ry12',]@assays[["RNA"]]@data),
+                   Group=dat['P2ry12',]@meta.data[["tmp"]],
+                   Type=dat['P2ry12',]@meta.data[["celltype"]])
+
+p5 <- ggplot(tmp1, aes(x=Value, y=Type, fill=Group)) +p4$theme+
+  geom_density_ridges()+
+  scale_fill_nejm(alpha = 0.6)+
+  theme(legend.title=element_blank(),legend.position = c(0.62,.95))+
+  labs(x='P2ry12 gene expression',y='Density')+
+  scale_y_discrete(labels=c("EC","Mo/Ma","EpC","MG","OLG","AS","PC","LYM","GRA","NPC"))
+
+(p1+p2+p3)/(p4+p5)
+```
+
+```{r GSE174574_P2datatable, fig.width = 16, fig.height = 9, fig.fullwidth = TRUE,out.width='100%'}
+
+tab1<- suppressMessages(tmp1 %>% group_by(Type,Group) %>% 
+                                    summarise(Min.=fivenum(Value)[1],
+                                              '1stQ'=fivenum(Value)[2],
+                                              Median=fivenum(Value)[3],
+                                              '3stQ'=fivenum(Value)[4],
+                                              Max.=fivenum(Value)[5],
+                                              Mean=mean(Value),
+                                              Dropout=sum(Value!=0)/length(Value)))
+
+knitr::kable(tab1)
+```
+
+
+## 确立P2共表达基因集
+```{r P2gene set cutoff value, fig.width = 16, fig.height = 9,fig.fullwidth = TRUE,out.width='100%'}
+# 4.计算bulk数据中的相关基因 ----------------------------------------------------------
+library(tidyverse)
+library(ggsci)
+library(patchwork)
+dat <- read.table('GSE77986andGSE172456/result_exp.txt')
+dat_sham <- dat[1:5]
+dat_mcao <- dat[6:12]
+
+
+####  整理数据，获取mcao、sham P2共表达基因
+p2_dat_sham <- as.numeric(dat_sham['P2ry12',])
+p2_dat_mcao <- as.numeric(dat_mcao['P2ry12',])
+
+cor_dat_sham <- cor(p2_dat_sham,t(dat_sham))
+cor_dat_sham <- data.frame(t(cor_dat_sham))
+cor_dat_sham$genename <- rownames(cor_dat_sham)
+
+cor_dat_mcao <- cor(p2_dat_mcao,t(dat_mcao))
+cor_dat_mcao <- data.frame(t(cor_dat_mcao))
+cor_dat_mcao$genename <- rownames(cor_dat_mcao)
+
+
+cor_dat_sham_pro <- subset(cor_dat_sham,t.cor_dat_sham.>0.6)
+cor_dat_mcao_pro <- subset(cor_dat_mcao,t.cor_dat_mcao.>0.6)
+
+cor_dat_pro_merge <- merge(cor_dat_sham_pro,cor_dat_mcao_pro,by='genename')
+cor_dat_pro_merge$plusvalue <- cor_dat_pro_merge$t.cor_dat_sham.+cor_dat_pro_merge$t.cor_dat_mcao.
+cor_dat_pro_merge <- cor_dat_pro_merge[order(cor_dat_pro_merge$plusvalue,decreasing = T),]
+
+## mhg函数建立
+library(mHG)
+minhgeo=function(bulkgene,singlegene,p,n=length(singlegene)){
+  bulkgene.p=bulkgene[1:round(length(bulkgene)*p*0.01)]
+  singlegene.n=head(singlegene,n)
+  tmp= bulkgene.p %in% singlegene.n
+  result <- mHG.test(tmp)[["p.value"]]}
+
+## 导入p2基因集
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+
+## 计算mhg的p值，单细胞的相关性从0.6-0.99，以0.01个单位增加；bulk的比例从前10%-50%，以1个单位增加
+porport<- seq(0.6,0.99,0.01)
+names(porport)=porport
+topp <- seq(10,50,1)
+names(topp)=topp
+result <- lapply(topp, function(x){
+  lapply(porport, function(y){
+    p2gene_tmp <- subset(p2gene,value.MCAO>y &value.Sham >y)
+    test <- minhgeo(cor_dat_pro_merge$genename,p2gene_tmp$genenames,x)
+    
+  })
+  
+})
+
+## 整理数据，画图
+result <- do.call(rbind,lapply(result,data.frame))
+result1 <- result
+result1$class <- rownames(result1)
+library(reshape2)
+result2 <- melt(result1,'class')
+result2$variable <- str_split(result2$variable,'X',simplify = T)[,2]
+result2$variable <- as.numeric(result2$variable)
+
+
+meanvalue <- result2 %>% group_by(variable) %>% summarise(mean=mean(value))
+
+### 生成想要的颜色数目
+colors <- colorRampPalette(c("purple","yellow"))(length(unique(result2$class)))
+
+p1 <- ggplot(result2,aes(x=variable,y=value))+
+  geom_point(aes(color=class))+
+  scale_color_manual(name="Top percent of \nbulk data(%)",
+                     values=setNames(colors, unique(result2$class)))+
+  labs(x='Correlation coeffience',y='P-value')+
+  geom_line(data = meanvalue,aes(x=variable,y=mean), color='red',alpha=0.8)+
+  stat_summary(fun.data=mean_se, geom="ribbon", alpha=0.4)+theme_bw()+
+  theme(legend.position = c(0.8,.6),legend.key.size = unit(3, 'mm'),
+        legend.background = element_rect(fill=alpha('white',0)))
+
+
+## 尝试取阈值。用alra的方法，将尾巴0.8后面的方差稳定的数值进行取标准差及平均数，
+## 再用用所有数值根据前面的标准差及平均数取z-score，最后取第一个小于3倍标准差的index。
+total_sd <- apply(result, 2, sd)
+sigma <- sd(total_sd[21:40])
+mu <- mean(total_sd[21:40])
+dat_tmp <- (total_sd-mu)/sigma
+dat_plot <- data.frame(Porportion=seq(0.6,0.99,0.01),Sigma=dat_tmp)
+
+p2 <- ggplot(dat_plot,aes(x=Porportion,y=Sigma))+
+  geom_line(color='red',alpha=0.5) +
+  geom_point(aes(size=Sigma),color='black',alpha=0.7) +theme_bw()+
+  theme(legend.position = c(0.85,.7),legend.background = element_rect(fill=alpha('white',0)))+
+  labs(x="Top percent of bulk data(%)")+
+  geom_vline(xintercept=0.74, linetype='dashed', color='blue')
+
+```
+
+```{r data-preproccessed, fig.width = 16, fig.height = 9,fig.fullwidth = TRUE,out.width='100%'}
+
+# 载入小提琴分裂代码 ---------------------------------------------------------------
+
+GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin, 
+                           draw_group = function(self, data, ..., draw_quantiles = NULL) {
+                             data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
+                             grp <- data[1, "group"]
+                             newdata <- plyr::arrange(transform(data, x = if (grp %% 2 == 1) xminv else xmaxv), if (grp %% 2 == 1) y else -y)
+                             newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+                             newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+                             
+                             if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+                               stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
+                                                                         1))
+                               quantiles <- ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+                               aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+                               aesthetics$alpha <- rep(1, nrow(quantiles))
+                               both <- cbind(quantiles, aesthetics)
+                               quantile_grob <- GeomPath$draw_panel(both, ...)
+                               ggplot2:::ggname("geom_split_violin", grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+                             }
+                             else {
+                               ggplot2:::ggname("geom_split_violin", GeomPolygon$draw_panel(newdata, ...))
+                             }
+                           })
+
+geom_split_violin <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", ..., 
+                              draw_quantiles = NULL, trim = TRUE, scale = "area", na.rm = FALSE, 
+                              show.legend = NA, inherit.aes = TRUE) {
+  layer(data = data, mapping = mapping, stat = stat, geom = GeomSplitViolin, 
+        position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
+        params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, na.rm = na.rm, ...))
+}
+
+# 作图 ----------------------------------------------------------------------
+
+
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 &value.Sham >0.74)
+
+obj1 <- readRDS('GSE167593mcao24single/prunnedcelltype.rds')
+obj2 <- readRDS('GSE174574/prunnedcelltype.rds')
+
+DefaultAssay(obj1)='alra'
+DefaultAssay(obj2)='alra'
+obj1 <- ScaleData(obj1,features = p2gene_wcl$genenames)
+obj2 <- ScaleData(obj2,features = p2gene_wcl$genenames)
+
+
+obj1_matrix <- obj1@assays[["alra"]]@scale.data
+obj2_matrix <- obj2@assays[["alra"]]@scale.data
+
+```
+
+```{r p2genesets expression in GSE167593, fig.width = 16, fig.height = 9,fig.fullwidth = TRUE,out.width='100%'}
+
+
+obj1_matrix <- data.frame(t(obj1_matrix))
+obj1_matrix$Group <- obj1@meta.data[["tmp"]]
+obj1_matrix$celltype <- obj1@meta.data[["celltype"]]
+
+obj1_matrix.melt <- melt(obj1_matrix,c('Group','celltype'))
+obj1_matrix.melt$Group=factor(obj1_matrix.melt$Group,levels=c('MCAO','Sham'))
+
+
+p3 <- ggplot(obj1_matrix.melt,aes(x=celltype,y=value,fill=Group))+
+  scale_fill_nejm()+
+  geom_split_violin(trim = TRUE)+
+  theme_bw()+
+  theme(legend.title=element_blank(),
+        legend.background = element_rect(fill=alpha('white',0)),
+        legend.position=c(0.5,0.95),
+        legend.direction = "horizontal")+
+  geom_boxplot(width = 0.05,outlier.alpha = 0,position = position_dodge(0.1),coef = 0,color='white')+
+  scale_x_discrete(labels=c("LYM","OLG","MG","NPC","Mo/Ma","NE","AS","GRA","EpC"))+
+  
+  labs(x='Cell type',y='P2ry12 Z-score')
+
+```
+
+```{r p2genesets expression in GSE174574, fig.width = 16, fig.height = 9,fig.fullwidth = TRUE,out.width='100%'}
+
+
+  obj2_matrix <- data.frame(t(obj2_matrix))
+  obj2_matrix$Group <- obj2@meta.data[["tmp"]]
+  obj2_matrix$celltype <- obj2@meta.data[["celltype"]]
+  
+  obj2_matrix.melt <- melt(obj2_matrix,c('Group','celltype'))
+  
+p4 <- ggplot(obj2_matrix.melt,aes(x=celltype,y=value,fill=Group))+
+    scale_fill_nejm()+
+    geom_split_violin(trim = TRUE)+
+    theme_bw()+
+    theme(legend.title=element_blank(),
+          legend.background = element_rect(fill=alpha('white',0)),
+          legend.position=c(0.5,0.95),
+          legend.direction = "horizontal")+
+    geom_boxplot(width = 0.05,outlier.alpha = 0,position = position_dodge(0.1),coef = 0,color='white')+
+    
+    scale_x_discrete(labels=c("EC","Mo/Ma","EpC","MG","OLG","AS","PC","LYM","GRA","NPC"))+
+    labs(x='Cell type',y='P2ry12 Z-score')
+
+```
+
+```{r plot pic for P2gene choose, fig.width = 16, fig.height = 9,fig.fullwidth = TRUE,out.width='100%'}
+layout <- "
+AAABBB
+AAABBB
+CCCCCC
+CCCCCC
+DDDDDD
+DDDDDD
+"
+p1 + p2 +p3 + p4+
+  plot_layout(design = layout)
+```
+
