@@ -165,9 +165,6 @@ knitr::kable(tab1)
 ## 确立P2共表达基因集
 ```{r P2gene set cutoff value, fig.width = 16, fig.height = 9,fig.fullwidth = TRUE,out.width='100%'}
 # 4.计算bulk数据中的相关基因 ----------------------------------------------------------
-library(tidyverse)
-library(ggsci)
-library(patchwork)
 dat <- read.table('GSE77986andGSE172456/result_exp.txt')
 dat_sham <- dat[1:5]
 dat_mcao <- dat[6:12]
