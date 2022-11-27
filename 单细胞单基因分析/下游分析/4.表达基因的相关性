@@ -1,0 +1,87 @@
+library(Seurat)
+library(reshape2)
+library(tidyverse)
+library(ggsci)
+
+
+# 作图 ----------------------------------------------------------------------
+
+
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 &value.Sham >0.74)
+
+obj1 <- readRDS('GSE167593mcao24single/prunnedcelltype.rds')
+obj2 <- readRDS('GSE174574/prunnedcelltype.rds')
+
+DefaultAssay(obj1)='alra'
+DefaultAssay(obj2)='alra'
+obj1 <- ScaleData(obj1,features = p2gene_wcl$genenames)
+obj2 <- ScaleData(obj2,features = p2gene_wcl$genenames)
+
+
+obj1_matrix <- obj1@assays[["alra"]]@scale.data
+obj2_matrix <- obj2@assays[["alra"]]@scale.data
+
+
+# GSE167593 ---------------------------------------------------------------
+## 只需要改obj1_matrix 为 obj2_matrix ; 改obj1 为 obj2  就是GSE174574 （补充材料）
+obj <- obj1
+obj_matrix <- obj1_matrix
+
+obj_matrix_cor <- data.frame(t(obj_matrix))
+obj_matrix_cor$Group <- obj@meta.data[["tmp"]]
+obj_matrix_cor$celltype <- obj@meta.data[["celltype"]]
+
+cor_n=c(0.74,0.75,0.8,0.85,0.9)
+names(cor_n) <- cor_n
+
+tmp <- lapply(cor_n,function(x){
+  tmp_p2gene <- subset(p2gene,value.MCAO>x &value.Sham >x)
+  tmp_matrix <- obj_matrix_cor[,colnames(obj_matrix_cor) %in% tmp_p2gene$genenames]
+  tmp_matrix$Group <- obj@meta.data[["tmp"]]
+  tmp_matrix$celltype <- obj@meta.data[["celltype"]]
+  tmp_matrix <- melt(tmp_matrix,c("Group","celltype"))
+  tmp_matrix %>% group_by(Group,celltype) %>% summarise(Median=median(value))
+  
+  
+})
+
+result <- do.call(cbind,lapply(tmp, function(x){
+  x=x[3]
+}))
+
+names(result)=names(tmp)
+result$Group <- tmp[[1]]$Group
+result$celltype <- tmp[[1]]$celltype
+
+result_sham <- subset(result,Group=='Sham')
+result_sham$Group=NULL
+rownames(result_sham)=result_sham$celltype
+result_sham$celltype=NULL
+result_mcao <- subset(result,Group=='MCAO')
+result_mcao$Group=NULL
+rownames(result_mcao)=result_mcao$celltype
+result_mcao$celltype=NULL
+
+
+
+
+
+library(patchwork)
+library(ggcorrplot2)
+
+
+
+p5 <- ggcorrplot.mixed(cor(result_sham),
+                       upper = "ellipse", 
+                       lower = "number",
+                       number.digits = 4)+ 
+  ggtitle("GSE167593-Sham")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p6 <- ggcorrplot.mixed(cor(result_mcao),
+                       upper = "ellipse", 
+                       lower = "number",
+                       number.digits = 4)+ 
+  ggtitle("GSE167593-MCAO")+
+  theme(plot.title = element_text(hjust = 0.5))
