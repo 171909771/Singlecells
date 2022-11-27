@@ -1,0 +1,105 @@
+library(Seurat)
+library(reshape2)
+library(tidyverse)
+library(ggsci)
+
+
+# 载入小提琴分裂代码 ---------------------------------------------------------------
+
+GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin, 
+                           draw_group = function(self, data, ..., draw_quantiles = NULL) {
+                             data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
+                             grp <- data[1, "group"]
+                             newdata <- plyr::arrange(transform(data, x = if (grp %% 2 == 1) xminv else xmaxv), if (grp %% 2 == 1) y else -y)
+                             newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+                             newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+                             
+                             if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+                               stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
+                                                                         1))
+                               quantiles <- ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+                               aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+                               aesthetics$alpha <- rep(1, nrow(quantiles))
+                               both <- cbind(quantiles, aesthetics)
+                               quantile_grob <- GeomPath$draw_panel(both, ...)
+                               ggplot2:::ggname("geom_split_violin", grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+                             }
+                             else {
+                               ggplot2:::ggname("geom_split_violin", GeomPolygon$draw_panel(newdata, ...))
+                             }
+                           })
+
+geom_split_violin <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", ..., 
+                              draw_quantiles = NULL, trim = TRUE, scale = "area", na.rm = FALSE, 
+                              show.legend = NA, inherit.aes = TRUE) {
+  layer(data = data, mapping = mapping, stat = stat, geom = GeomSplitViolin, 
+        position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
+        params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, na.rm = na.rm, ...))
+}
+
+# 作图 ----------------------------------------------------------------------
+
+
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 &value.Sham >0.74)
+
+obj1 <- readRDS('GSE167593mcao24single/prunnedcelltype.rds')
+obj2 <- readRDS('GSE174574/prunnedcelltype.rds')
+
+DefaultAssay(obj1)='alra'
+DefaultAssay(obj2)='alra'
+obj1 <- ScaleData(obj1,features = p2gene_wcl$genenames)
+obj2 <- ScaleData(obj2,features = p2gene_wcl$genenames)
+
+
+obj1_matrix <- obj1@assays[["alra"]]@scale.data
+obj2_matrix <- obj2@assays[["alra"]]@scale.data
+
+
+# GSE167593 ---------------------------------------------------------------
+
+obj1_matrix <- data.frame(t(obj1_matrix))
+obj1_matrix$Group <- obj1@meta.data[["tmp"]]
+obj1_matrix$celltype <- obj1@meta.data[["celltype"]]
+
+obj1_matrix.melt <- melt(obj1_matrix,c('Group','celltype'))
+obj1_matrix.melt$Group=factor(obj1_matrix.melt$Group,levels=c('MCAO','Sham'))
+
+
+ggplot(obj1_matrix.melt,aes(x=celltype,y=value,fill=Group))+
+  scale_fill_nejm()+
+  geom_split_violin(trim = TRUE)+
+  theme_bw()+
+  theme(legend.title=element_blank(),
+        legend.background = element_rect(fill=alpha('white',0)),
+        legend.position=c(0.5,0.97),
+        legend.direction = "horizontal")+
+  geom_boxplot(width = 0.05,outlier.alpha = 0,position = position_dodge(0.1),coef = 0,color='white')+
+  scale_x_discrete(labels=c("LYM","OLG","MG","NPC","Mo/Ma","NE","AS","GRA","EpC"))+
+  coord_fixed(ratio = 1)+ggtitle('GSE167593')
+  labs(x='Cell type',y='P2ry12 Z-score')
+
+
+# GSE174574 ---------------------------------------------------------------
+  
+  obj2_matrix <- data.frame(t(obj2_matrix))
+  obj2_matrix$Group <- obj2@meta.data[["tmp"]]
+  obj2_matrix$celltype <- obj2@meta.data[["celltype"]]
+  
+  obj2_matrix.melt <- melt(obj2_matrix,c('Group','celltype'))
+  
+  ggplot(obj2_matrix.melt,aes(x=celltype,y=value,fill=Group))+
+    scale_fill_nejm()+
+    geom_split_violin(trim = TRUE)+
+    theme_bw()+
+    theme(legend.title=element_blank(),
+          legend.background = element_rect(fill=alpha('white',0)),
+          legend.position=c(0.5,0.97),
+          legend.direction = "horizontal")+
+    geom_boxplot(width = 0.05,outlier.alpha = 0,position = position_dodge(0.1),coef = 0,color='white')+
+    coord_fixed(ratio = 1)+ggtitle('GSE174574')+
+    scale_x_discrete(labels=c("EC","Mo/Ma","EpC","MG","OLG","AS","PC","LYM","GRA","NPC"))+
+    labs(x='Cell type',y='P2ry12 Z-score')
+
+
+
