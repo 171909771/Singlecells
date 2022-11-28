@@ -1,0 +1,36 @@
+
+library(Seurat)
+library(reshape2)
+library(tidyverse)
+library(ggsci)
+
+### 只需要改下面的地址就可以看连个数据集
+obj1 <- readRDS('GSE174574/prunnedcelltype.rds')
+
+
+DefaultAssay(obj1)='alra'
+
+obj1 <- ScaleData(obj1,features = 'P2ry12')
+obj1_matrix <- obj1@assays[["alra"]]@scale.data
+obj1_matrix <- data.frame(t(obj1_matrix))
+obj1_matrix$Group <- obj1@meta.data[["tmp"]]
+obj1_matrix$celltype <- obj1@meta.data[["celltype"]]
+
+
+
+obj1_matrix.melt <- melt(obj1_matrix,c('Group','celltype'))
+obj1_matrix.melt$Group=factor(obj1_matrix.melt$Group,levels=c('MCAO','Sham'))
+
+ggplot(obj1_matrix.melt,aes(x=celltype,y=value,fill=Group))+
+  scale_fill_nejm()+
+  geom_split_violin(trim = TRUE)+
+  theme_bw()+
+  theme(legend.title=element_blank(),
+        legend.background = element_rect(fill=alpha('white',0)),
+        legend.position=c(0.5,0.97),
+        legend.direction = "horizontal")+
+  geom_boxplot(width = 0.05,outlier.alpha = 0,position = position_dodge(0.1),coef = 0,color='white')+
+  scale_x_discrete(labels=c("EC","Mo/Ma","EpC","MG","OLG","AS","PC","LYM","GRA","NPC"))+
+  coord_fixed(ratio = 1)+ggtitle('GSE167593')
+labs(x='Cell type',y='P2ry12 Z-score')
+
