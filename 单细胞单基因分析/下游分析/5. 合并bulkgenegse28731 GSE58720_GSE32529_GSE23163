@@ -1,0 +1,45 @@
+# gse28731 GSE58720 GSE32529 GSE23163
+GSE23163<- dat1
+GSE23163$genename <- rownames(GSE23163)
+
+
+dat_merge <- merge(GSE28731,GSE58720,by='genename',suffixes = c("GSE28731","GSE58720"))
+dat_merge1 <- merge(GSE32529,GSE23163,by='genename',suffixes = c("GSE32529","GSE23163"))
+dat_merget <- merge(dat_merge,dat_merge1,by='genename')
+
+colnames(dat_merget)[-1]=str_split(colnames(dat_merget)[-1],'[.]',simplify = T)[,1]
+
+
+
+colnames(dat_merget)[1]='gene'
+colnames(dat_merget)[-1]=  paste(colnames(dat_merget)[-1],1:27,sep = "")
+
+
+
+
+
+ExamplePlatformData <- data.frame(sample_name=colnames(dat_merget)[-1],
+                                  Platform=c(rep(1,5),rep(2,6),rep(3,8),rep(4,8)))
+
+
+
+library(tidyverse)
+
+tmp <- str_split(colnames(dat_merget)[-1],"GSE",,simplify = T)[,1]
+tmp1 <- gsub("Sham",0,tmp)
+tmp1 <- gsub("MCAO",1,tmp1)
+
+ExampleSampleClass <- data.frame(sample_name=colnames(dat_merget)[-1],
+                                 Class=tmp1)
+
+write.table(dat_merget,"ExampleExpressionData.txt",sep="\t",row.names=FALSE,quote = F)
+
+
+
+write.table(ExamplePlatformData,"ExamplePlatformData.txt",sep="\t",row.names=FALSE,quote = F)
+
+
+
+write.table(ExampleSampleClass,"ExampleSampleClass.txt",sep="\t",row.names=FALSE,quote = F)
+
+
