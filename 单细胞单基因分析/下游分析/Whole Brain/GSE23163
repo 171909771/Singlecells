@@ -5,7 +5,7 @@
 library(limma)
 library(edgeR)
 ## 归一化
-dat <- read.delim('matrix.txt.gz',comment.char = "!")
+dat <- read.delim('GSE23163_bulk_wholebrain/GSE23163_series_matrix.txt.gz',comment.char = "!")
 dat <- data.frame(dat)
 dat1 <- dat[-1]
 dat1 <- dat1[paste('GSM',c(570185:570188,570197:570200),sep = "")]
