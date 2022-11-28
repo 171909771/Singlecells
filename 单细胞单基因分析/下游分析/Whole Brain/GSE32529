@@ -5,7 +5,7 @@
 library(limma)
 library(edgeR)
 ## 已经确认不需要标准化和归一化，数据齐
-dat <- read.delim('GSE32529_series_matrix.txt.gz',comment.char = "!")
+dat <- read.delim('GSE32529_bulk_wholebrain/GSE32529_series_matrix.txt.gz',comment.char = "!")
 # 确认不需要nor
 
 library(AnnoProbe)
