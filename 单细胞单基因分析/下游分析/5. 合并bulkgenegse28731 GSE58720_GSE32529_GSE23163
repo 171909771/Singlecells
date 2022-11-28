@@ -1,6 +1,17 @@
 # gse28731 GSE58720 GSE32529 GSE23163
+GSE58720<- dat1
+GSE58720$genename <- rownames(GSE58720)
+
+GSE32529<- dat1
+GSE32529$genename <- rownames(GSE32529)
+
+GSE28731<- dat1
+GSE28731$genename <- rownames(GSE28731)
+
 GSE23163<- dat1
 GSE23163$genename <- rownames(GSE23163)
+
+
 
 
 dat_merge <- merge(GSE28731,GSE58720,by='genename',suffixes = c("GSE28731","GSE58720"))
@@ -14,7 +25,7 @@ colnames(dat_merget)[-1]=str_split(colnames(dat_merget)[-1],'[.]',simplify = T)[
 colnames(dat_merget)[1]='gene'
 colnames(dat_merget)[-1]=  paste(colnames(dat_merget)[-1],1:27,sep = "")
 
-
+dat_merget <- dat_merget[-1,]
 
 
 
