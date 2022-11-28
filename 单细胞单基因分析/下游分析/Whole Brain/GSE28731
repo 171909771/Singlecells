@@ -10,7 +10,7 @@ library(edgeR)
 download.file('https://ftp.ncbi.nlm.nih.gov/geo/series/GSE28nnn/GSE28731/matrix/GSE28731_series_matrix.txt.gz',
               destfile = 'matrix.txt.gz')
 
-dat <- read.delim('matrix.txt.gz',comment.char = "!")
+dat <- read.delim('gse28731bulk_wholebrain/matrix.txt.gz',comment.char = "!")
 # 已经确认不需要nor
 
 
