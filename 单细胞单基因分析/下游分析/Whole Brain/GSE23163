@@ -1,7 +1,6 @@
 
 # 数据前处理 -------------------------------------------------------------------
 
-
 library(limma)
 library(edgeR)
 ## 归一化
@@ -23,27 +22,27 @@ boxplot(dat1)
 dat1$ID_REF <- dat$ID_REF
 
 ## 注释
-library(AnnoProbe)
-gpl='GPL6885'
-## 可以更换type信息，具体查看?idmap
-probe2gene=idmap(gpl,type = 'soft')
-head(probe2gene)
+annotagse23163 <- data.table::fread("GSE23163_bulk_wholebrain/GPL6885-11608.txt")
+annotagse23163_tmp <- annotagse23163[,c(1,28)]
+annotagse23163_tmp$GB_ACC <- str_split(annotagse23163_tmp$GB_ACC,'[.]',simplify = T)[,1]
+library('biomaRt')
+ensembl = useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+## instead of using the wildcard ("*") use a vector of genbank accession you are using.
+dat = getBM(attributes = c("protein_id", "embl", "hgnc_symbol"), values = "*", mart = ensembl)
+annot<-getBM(c("ensembl_gene_id", "mgi_symbol", "refseq_mrna"), mart=ensembl)
+dat2 <- merge(dat1,annotagse23163_tmp,by.x='ID_REF',by.y='ID')
+dat3 <- merge(dat2,annot,by.x='GB_ACC',by.y='refseq_mrna')
+dat4 <-dat3[,3:12] 
 
-dat1=merge(dat1,probe2gene,by.x="ID_REF",by.y="ID")
-dat <- aggregate(x = dat1[,2:(length(dat1)-1)],
-                 by = list(dat1$symbol),
+dat5 <- aggregate(x = dat4[,1:8],
+                 by = list(dat4$mgi_symbol),
                  FUN = mean)
-rownames(dat)=dat$Group.1
-dat$Group.1=NULL
+rownames(dat5)=dat5$Group.1
+dat5$Group.1=NULL
 
-## 蛋白编码基因的转换
-library(AnnoProbe) 
-ids=annoGene( rownames(dat),'SYMBOL','mouse')
-procongene=ids$SYMBOL[ids$biotypes=='protein_coding']
-dat=dat[rownames(dat)%in%procongene,]
 
-colnames(dat) <- c(rep('Sham',4),rep('MCAO',4))
-dat1 <- dat
+colnames(dat5) <- c(rep('Sham',4),rep('MCAO',4))
+dat1 <- dat5
 
 # P2的表达趋势 -----------------------------------------------------------------
 avereps_df  <- t(limma::avereps( t(dat1) , ID = colnames(dat1)))##对相同时间序列的表达值取平均
