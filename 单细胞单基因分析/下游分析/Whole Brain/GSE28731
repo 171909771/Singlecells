@@ -33,8 +33,8 @@ ids=annoGene( rownames(dat),'SYMBOL','mouse')
 procongene=ids$SYMBOL[ids$biotypes=='protein_coding']
 dat=dat[rownames(dat)%in%procongene,]
 
-dat1 <- dat[1:6]
-colnames(dat1) <- c(rep('Sham',3),rep('MCAO',3))
+dat1 <- dat[c(1,2,5,6,7)]
+colnames(dat1) <- c(rep('Sham',2),rep('MCAO',3))
 
 
 # P2的表达趋势 -----------------------------------------------------------------
