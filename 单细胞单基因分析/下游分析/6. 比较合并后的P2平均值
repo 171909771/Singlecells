@@ -17,20 +17,21 @@ dat <- data.frame(name=colnames(dat1),value=dat)
 dat_sham <- dat$value[1:13]
 dat_mcao <-dat$value[14:27]
 
+
 ## 74个基因参与评估
-summary(lmp(value~name,data=dat))
-
-
+# T检验，最后用Welch T检验，因为方差不齐
 hist(dat_sham)
 hist(dat_mcao)
 ## 正态性检验
 qqnorm(dat$value, pch = 1, frame = FALSE)
 qqline(dat$value, col = "steelblue", lwd = 2)
-shapiro.test(dat$value[1:13])
-shapiro.test(dat$value[14:27])
+shapiro.test(dat_sham)
+shapiro.test(dat_mcao)
+var.test(dat_sham,dat_mcao)
 
-t.test(dat_sham,dat_mcao)
+t.test(dat_sham,dat_mcao,var.equal = F)
+
 boxplot(dat_sham,dat_mcao)
 
-
-
+## 置换检验
+summary(lmp(value~name,data=dat))
