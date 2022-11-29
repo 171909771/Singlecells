@@ -17,4 +17,4 @@ dat2 <- data.frame(dat2)
 
 boxplot(dat2)
 dat2$genename <- rownames(dat2)
-
+saveRDS(dat2,file='loadme.rds')
