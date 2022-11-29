@@ -20,8 +20,6 @@ dat_mcao <-dat$value[14:27]
 
 ## 74个基因参与评估
 # T检验，最后用Welch T检验，因为方差不齐
-hist(dat_sham)
-hist(dat_mcao)
 ## 正态性检验
 qqnorm(dat$value, pch = 1, frame = FALSE)
 qqline(dat$value, col = "steelblue", lwd = 2)
@@ -29,9 +27,22 @@ shapiro.test(dat_sham)
 shapiro.test(dat_mcao)
 var.test(dat_sham,dat_mcao)
 
-t.test(dat_sham,dat_mcao,var.equal = F)
+t.test(dat_sham,dat_mcao)
 
-boxplot(dat_sham,dat_mcao)
+
 
 ## 置换检验
 summary(lmp(value~name,data=dat))
+
+
+library(ggpubr)
+library(rstatix)
+library(ggplot2)
+ggplot(dat,aes(x=name,y=value,fill=name))+
+  geom_violin()+geom_boxplot(fill='white',width = 0.2,alpha=0.5)+
+  stat_compare_means(method = "t.test",label.x = 0.8, label.y = 18.8)+scale_fill_nejm()+
+  theme_bw()+labs(x='Group',y='Microglia P2ry12 score')+
+  theme(legend.position = c(0.8,0.2),legend.background = element_rect(fill=alpha('white',0)))
+  
+
+
