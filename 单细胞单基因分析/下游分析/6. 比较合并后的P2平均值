@@ -1,4 +1,6 @@
 library("lmPerm")
+p2gene <- read_rds('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74,value.Sham>0.74)
 
 dat1 <- read.delim('gse28731_GSE58720_GSE32529_GSE23163_merge/result_exp.txt')
 rownames(dat1) <- dat1$X
