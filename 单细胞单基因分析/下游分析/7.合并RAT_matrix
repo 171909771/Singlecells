@@ -1,12 +1,20 @@
-GSE163614 <- readRDS('Rat/GSE163614_bulk_wholebrain_rat/loadme.rds')
-GSE199066 <- readRDS('Rat/GSE199066_bulk_wholebrain_rat/loadme.rds')
-GSE97537 <- readRDS('Rat/GSE97537_bulk_wholebrain_rat/loadme.rds')
+GSE163614 <- read_rds('Rat/GSE163614_bulk_wholebrain_rat/loadme.rds')
+GSE97537 <- read_rds('Rat/GSE97537_bulk_wholebrain_rat/loadme.rds')
+
+
 GSE97537$genename <- rownames(GSE97537)
-dat_merge <- merge(GSE163614,GSE199066,by='genename',suffixes = c("GSE163614","GSE199066"))
-dat_merget <- merge(dat_merge,GSE97537,by='genename')
+
+
+
+dat_merge <- merge(GSE163614,GSE97537,by='genename',suffixes = c("GSE163614","GSE97537"))
+dat_merget <- dat_merge
 colnames(dat_merget)[1]='gene'
+
+colnames(dat_merget)[-1]=paste(colnames(dat_merget)[-1],1:18,sep = "")
+
+
 ExamplePlatformData <- data.frame(sample_name=colnames(dat_merget)[-1],
-                                  Platform=c(rep(1,6),rep(2,6),rep(3,12)))
+                                  Platform=c(rep(1,6),rep(2,12)))
 
 library(tidyverse)
 tmp <- grepl('MCAO',ignore.case = T,colnames(dat_merget)[-1])
@@ -16,3 +24,5 @@ ExampleSampleClass <- data.frame(sample_name=colnames(dat_merget)[-1],
 write.table(dat_merget,"ExampleExpressionData.txt",sep="\t",row.names=FALSE,quote = F)
 write.table(ExamplePlatformData,"ExamplePlatformData.txt",sep="\t",row.names=FALSE,quote = F)
 write.table(ExampleSampleClass,"ExampleSampleClass.txt",sep="\t",row.names=FALSE,quote = F)
+
+
