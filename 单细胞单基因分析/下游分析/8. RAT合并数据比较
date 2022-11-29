@@ -7,17 +7,18 @@ rownames(dat1) <- dat1$X
 dat1$X <- NULL
 
 ## 同源基因转换
+## 用的是小鼠和大鼠并集的基因
 library(homologene)
 genehmlist=homologene(p2gene_wcl$genenames, inTax = 10090, outTax = 10116)
 
-tmp <- union(genehmlist$`10116`,p2gene_wcl$genenames)
+tmp <- union(genehmlist$`10116`,p2gene_wcl$genenames)  ## 用的是小鼠和大鼠并集的基因
 
 
 colnames(dat1)[grepl('sham',ignore.case = T,colnames(dat1))]='Sham'
 colnames(dat1)[!grepl('sham',ignore.case = T,colnames(dat1))]='MCAO'
 
-dat1 <- dat1[tmp,]
-dat1 <- dat1[p2gene_wcl$genenames,]
+dat1 <- dat1[tmp,]  ## 用的是小鼠和大鼠并集的基因
+# dat1 <- dat1[p2gene_wcl$genenames,]
 dat1 <- na.omit(dat1)
 
 
@@ -51,4 +52,13 @@ t.test(dat_sham,dat_mcao, var.equal = FALSE)
 
 # 置换检验
 summary(lmp(value~name,data=dat))
+
+
+library(ggpubr)
+library(ggplot2)
+ggplot(dat,aes(x=name,y=value,fill=name))+
+  geom_violin()+geom_boxplot(fill='white',width = 0.1,alpha=0.5)+
+  stat_compare_means(method = "t.test",label.x = 0.8, label.y = 30.1)+scale_fill_nejm()+
+  theme_bw()+labs(x='Group',y='Microglia P2ry12 score')+
+  theme(legend.position = c(0.8,0.2),legend.background = element_rect(fill=alpha('white',0)))
 
