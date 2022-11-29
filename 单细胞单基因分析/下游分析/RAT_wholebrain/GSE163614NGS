@@ -1,0 +1,29 @@
+library(DESeq2)
+# download.file('https://ftp.ncbi.nlm.nih.gov/geo/series/GSE163nnn/GSE163614/suppl/GSE163614_mRNA_Expression_Profiling.xlsx',destfile = 'rawmatrix.xlsx')
+
+library(readxl)
+dat1 <- read_xlsx('rawmatrix.xlsx',skip = 25)
+dat1 <- dat1[,c(1,13:18)]
+
+dat1 <- aggregate(dat1[-1],list(dat1$gene_short_name),mean)
+
+
+
+
+rownames(dat1) <- dat1$Group.1
+dat1$Group.1 <- NULL
+dat1 <- round(dat1)
+  
+  
+  
+coldata <-data.frame(row.names = colnames(dat1),condition=c(rep('MCAO',3),rep('Sham',3)))
+dds <- DESeqDataSetFromMatrix(dat1, coldata, design= ~ condition )
+dds <- DESeq(dds) 
+dat2 <- counts(dds, normalized=TRUE)
+dat2 <- log1p(dat2)
+colnames(dat2) <- coldata$condition
+dat2 <- data.frame(dat2)
+
+boxplot(dat2)
+dat2$genename <- rownames(dat2)
+saveRDS(dat2,file='loadme.rds')
