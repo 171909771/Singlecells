@@ -1,0 +1,54 @@
+library("lmPerm")
+p2gene <- read_rds('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+
+dat1 <- read.delim('Rat/mergedata/result_exp.txt')
+rownames(dat1) <- dat1$X
+dat1$X <- NULL
+
+
+library(homologene)
+genehmlist=homologene(p2gene_wcl$genenames, inTax = 10090, outTax = 10116)
+
+tmp <- union(genehmlist$`10116`,p2gene_wcl$genenames)
+
+
+colnames(dat1)[grepl('sham',ignore.case = T,colnames(dat1))]='Sham'
+colnames(dat1)[!grepl('sham',ignore.case = T,colnames(dat1))]='MCAO'
+
+dat1 <- dat1[tmp,]
+dat1 <- dat1[p2gene_wcl$genenames,]
+dat1 <- na.omit(dat1)
+
+
+
+dat <- apply(dat1,2, mean)
+dat <- data.frame(name=colnames(dat1),value=dat)
+dat_sham <- dat$value[11:18]
+dat_mcao <-dat$value[1:10]
+
+mean(dat_sham)
+mean(dat_mcao)
+
+# 68个基因参与评估 ，最后用welch test检验，因为方差不齐
+# t检验
+# https://officeguide.cc/r-t-test-population-mean-tutorial-examples/   说明
+hist(dat_sham)
+hist(dat_mcao)
+## 正态性检验
+qqnorm(dat_sham, pch = 1, frame = FALSE)
+qqline(dat$value, col = "steelblue", lwd = 2)
+shapiro.test(dat_sham)
+shapiro.test(dat_mcao)
+
+t.test(dat_sham,dat_mcao)
+boxplot(dat_sham,dat_mcao)
+
+## 由于方差不齐，选用置换检验
+var.test(dat_sham,dat_mcao)
+t.test(dat_sham,dat_mcao, var.equal = FALSE)
+
+
+# 置换检验
+summary(lmp(value~name,data=dat))
+
