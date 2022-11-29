@@ -41,8 +41,8 @@ library(ggplot2)
 ggplot(dat,aes(x=name,y=value,fill=name))+
   geom_violin()+geom_boxplot(fill='white',width = 0.1,alpha=0.5)+
   stat_compare_means(method = "t.test",label.x = 0.8, label.y = 18.8)+scale_fill_nejm()+
-  theme_bw()+labs(x='Group',y='Microglia P2ry12 score')+
-  theme(legend.position = c(0.8,0.2),legend.background = element_rect(fill=alpha('white',0)))
-  
+  theme_bw()+labs(title = 'Mouse cortex',x='Group',y='Microglia P2ry12 score')+
+  theme(plot.title = element_text(hjust = 0.5),legend.position = c(0.8,0.2),legend.background = element_rect(fill=alpha('white',0)))+
+  coord_fixed(ratio = 1.5)
 
 
