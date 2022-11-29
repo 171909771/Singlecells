@@ -6,7 +6,7 @@ dat1 <- read.delim('Rat/mergedata/result_exp.txt')
 rownames(dat1) <- dat1$X
 dat1$X <- NULL
 
-
+## 同源基因转换
 library(homologene)
 genehmlist=homologene(p2gene_wcl$genenames, inTax = 10090, outTax = 10116)
 
