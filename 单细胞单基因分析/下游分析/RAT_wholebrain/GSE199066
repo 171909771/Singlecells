@@ -1,0 +1,20 @@
+# download.file('https://ftp.ncbi.nlm.nih.gov/geo/series/GSE199nnn/GSE199066/suppl/GSE199066_All.counts.exp.txt.gz',destfile = 'matrix.txt.gz')
+library(DESeq2)
+
+dat1 <- read.delim('matrix.txt.gz')
+dat1 <- dat1[1:7]
+dat1 <- aggregate(dat1[2:7],list(dat1$AccID),mean)
+rownames(dat1) <- dat1$Group.1
+dat1$Group.1 <- NULL
+  
+coldata <-data.frame(row.names = colnames(dat1),condition=c(rep('Sham',3),rep('MCAO',3)))
+dds <- DESeqDataSetFromMatrix(dat1, coldata, design= ~ condition )
+dds <- DESeq(dds) 
+dat2 <- counts(dds, normalized=TRUE)
+dat2 <- log1p(dat2)
+colnames(dat2) <- coldata$condition
+dat2 <- data.frame(dat2)
+
+boxplot(dat2)
+dat2$genename <- rownames(dat2)
+
