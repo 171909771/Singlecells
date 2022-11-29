@@ -1,0 +1,26 @@
+library(GEOquery)
+
+geodata <- getGEO('GSE97537',getGPL = F)
+
+dat <- data.frame(geodata[["GSE97537_series_matrix.txt.gz"]]@assayData[["exprs"]])
+dat$ID_REF <- rownames(dat)
+
+library(AnnoProbe)
+gpl='GPL1355'
+## 可以更换type信息，具体查看?idmap
+probe2gene=idmap(gpl,type = 'soft')
+head(probe2gene)
+
+dat1=merge(dat,probe2gene,by.x="ID_REF",by.y="ID")
+dat <- aggregate(x = dat1[,2:(length(dat1)-1)],
+                 by = list(dat1$symbol),
+                 FUN = mean)
+rownames(dat)=dat$Group.1
+dat$Group.1=NULL
+
+
+boxplot(dat)
+# 不需要归一化
+colnames(dat)=c(rep('MCAO',7),rep('Sham',5))
+saveRDS(dat,file='loadme.rds')
+
