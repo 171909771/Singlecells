@@ -1,0 +1,34 @@
+library("lmPerm")
+
+dat1 <- read.delim('gse28731_GSE58720_GSE32529_GSE23163_merge/result_exp.txt')
+rownames(dat1) <- dat1$X
+dat1$X <- NULL
+colnames(dat1) <- str_split(colnames(dat1) ,"GSE",simplify = T)[,1]
+
+dat1 <- dat1[p2gene_wcl$genenames,]
+dat1 <- na.omit(dat1)
+
+
+
+dat <- apply(dat1,2, mean)
+dat <- data.frame(name=colnames(dat1),value=dat)
+dat_sham <- dat$value[1:13]
+dat_mcao <-dat$value[14:27]
+
+## 74个基因参与评估
+summary(lmp(value~name,data=dat))
+
+
+hist(dat_sham)
+hist(dat_mcao)
+## 正态性检验
+qqnorm(dat$value, pch = 1, frame = FALSE)
+qqline(dat$value, col = "steelblue", lwd = 2)
+shapiro.test(dat$value[1:13])
+shapiro.test(dat$value[14:27])
+
+t.test(dat_sham,dat_mcao)
+boxplot(dat_sham,dat_mcao)
+
+
+
