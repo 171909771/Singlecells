@@ -1,3 +1,23 @@
+# 计算AUC值及addmordule值
+library(AUCell)
+library(clusterProfiler)
+library(ggplot2)
+library(Seurat)
+library(SeuratData)
+## 计算AUC值
+obj <-  readRDS('GSE167593mcao24single/prunnedcelltype.rds') 
+cells_rankings <- AUCell_buildRankings(obj@assays[["alra"]]@data)  # 关键一步
+# ?AUCell_buildRankings
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+cells_AUC <- AUCell_calcAUC(p2gene_wcl$genenames, cells_rankings, aucMaxRank=nrow(cells_rankings)*0.1)
+aucs <- as.numeric(cells_AUC@assays@data@listData[["AUC"]])
+obj$AUC <- aucs
+## 计算addmordule值
+obj <- AddModuleScore(object = obj,list(p2gene_wcl$genenames))
+saveRDS(obj,'GSE167593mcao24single/prunnedcelltype_auc.rds')
+
+############################################  开始进行比较
 # 都不符合正态分布
 ## 简单平均
 p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
