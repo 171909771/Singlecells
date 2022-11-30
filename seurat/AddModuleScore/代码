@@ -1,0 +1,83 @@
+# 取一个seuratdata的1000个细胞作为演示
+object <- obj[,sample(23502,1000)]
+# 设随机种子
+set.seed(1)
+# 默认参数
+features=p2gene_wcl$genenames[1:5] # 设定感兴趣的基因集
+pool = NULL
+nbin = 24
+ctrl = 100
+k = FALSE
+assay = NULL
+assay=NULL
+name = "Cluster"
+seed = 1
+search = FALSE
+# 数据前处理
+assay.old <- DefaultAssay(object = object)
+assay <- assay%||%assay.old   # 前面没有取后面
+DefaultAssay(object = object) <- assay
+assay.data <- GetAssayData(object = object)
+features.old <- features
+cluster.length <- length(x = features)
+missing.features <- setdiff(x = features, y = rownames(x = object))
+# 开始计算
+pool <- pool %||% rownames(x = object)
+## 计算每个基因的均值
+data.avg <- Matrix::rowMeans(x = assay.data[pool, ])
+## 均值排序
+data.avg <- data.avg[order(data.avg)]
+## 用（均值+（一个正态分布值/1e30））分割为一个一个bin（24个bin）
+data.cut <- cut_number(x = data.avg + rnorm(n = length(data.avg))/1e30, n = nbin, labels = FALSE, right = FALSE)
+names(x = data.cut) <- names(x = data.avg)
+ctrl.use <- vector(mode = "list", length = cluster.length)
+
+## 在每个bin中随机取100个基因作为该bin的背景基因均值
+for (i in 1:cluster.length) {
+  features.use <- features[[i]]
+  for (j in 1:length(x = features.use)) {
+    ctrl.use[[i]] <- c(
+      ctrl.use[[i]],
+      names(x = sample(
+        x = data.cut[which(x = data.cut == data.cut[features.use[j]])],
+        size = ctrl,
+        replace = FALSE
+      ))
+    )
+  }
+}
+
+## 唯一化基因
+ctrl.use <- lapply(X = ctrl.use, FUN = unique)
+
+## 创建背景矩阵
+ctrl.scores <- matrix(
+  data = numeric(length = 1L),
+  nrow = length(x = ctrl.use),
+  ncol = ncol(x = object)
+)
+
+## 用前面的ctrl基因集来计算细胞背景均值
+for (i in 1:length(ctrl.use)) {
+  features.use <- ctrl.use[[i]]
+  ctrl.scores[i, ] <- Matrix::colMeans(x = assay.data[features.use, ])
+}
+
+## 创建兴趣基因集矩阵
+features.scores <- matrix(
+  data = numeric(length = 1L),
+  nrow = cluster.length,
+  ncol = ncol(x = object)
+)
+
+## 用兴趣基因集来计算均值
+for (i in 1:cluster.length) {
+  features.use <- features[[i]]
+  data.use <- assay.data[features.use, , drop = F]
+  features.scores[i, ] <- Matrix::colMeans(x = data.use)
+}
+
+## 用每个细胞的兴趣基因值减去每个细胞的背景基因值
+features.scores.use <- features.scores - ctrl.scores
+
+## 最后将每个细胞的兴趣基因集平均化得到最终值
