@@ -1,0 +1,50 @@
+# https://cloud.tencent.com/developer/article/1722057
+
+library(AUCell)
+library(clusterProfiler)
+library(ggplot2)
+library(Seurat)
+library(SeuratData)
+
+
+obj <-  readRDS('GSE174574/prunnedcelltype.rds') 
+
+matrix <- obj@assays[["alra"]]@data
+half <- round(ncol(matrix)/2)
+ExprMat_1 <- matrix[,1:half]
+ExprMat_2 <- matrix[,(half+1):ncol(matrix)]
+
+saveRDS(ExprMat_1,file = 'GSE174574/ExprMat_1.rds')
+saveRDS(ExprMat_2,file = 'GSE174574/ExprMat_2.rds')
+
+ExprMat_1 <- readRDS('GSE174574/ExprMat_1.rds')
+ExprMat_2 <- readRDS('GSE174574/ExprMat_2.rds')
+
+
+cells_rankings_1 <- AUCell_buildRankings(ExprMat_1)
+saveRDS(cells_rankings_1,file = 'GSE174574/cells_rankings_1.rds')
+
+cells_rankings_2 <- AUCell_buildRankings(ExprMat_2)
+saveRDS(cells_rankings_2,file = 'GSE174574/cells_rankings_2.rds')
+
+cells_rankings_1 <- readRDS('GSE174574/cells_rankings_1.rds')
+cells_rankings_2 <- readRDS('GSE174574/cells_rankings_2.rds')
+
+cells_rankings <- AUCell::cbind(cells_rankings_1, cells_rankings_2)
+
+# ?AUCell_buildRankings
+
+
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+cells_AUC <- AUCell_calcAUC(p2gene_wcl$genenames, cells_rankings, aucMaxRank=nrow(cells_rankings)*0.1)
+
+
+aucs <- as.numeric(cells_AUC@assays@data@listData[["AUC"]])
+obj$AUC <- aucs
+
+obj <- AddModuleScore(object = obj,list(p2gene_wcl$genenames))
+
+saveRDS(obj,'GSE174574/prunnedcelltype_auc.rds')
+
+## 开始比较
