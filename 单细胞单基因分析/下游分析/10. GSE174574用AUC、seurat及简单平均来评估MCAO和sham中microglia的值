@@ -48,3 +48,45 @@ obj <- AddModuleScore(object = obj,list(p2gene_wcl$genenames))
 saveRDS(obj,'GSE174574/prunnedcelltype_auc.rds')
 
 ## 开始比较
+# 都不符合正态分布
+## 简单平均
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+
+obj <-  readRDS('GSE174574/prunnedcelltype_auc.rds') 
+
+dat <- data.frame(obj[p2gene_wcl$genenames,]@assays[["alra"]]@data)
+dat_sham <- dat[obj@meta.data[["tmp"]]=='Sham' & obj@meta.data[["celltype"]]=='Microglia']
+dat_mcao <- dat[obj@meta.data[["tmp"]]=='MCAO' & obj@meta.data[["celltype"]]=='Microglia']
+
+dat_sham_mean <- apply(dat_sham, 2, mean)
+dat_mcao_mean <- apply(dat_mcao, 2, mean)
+
+hist(dat_sham_mean)
+hist(dat_mcao_mean)
+mean(dat_sham_mean)
+mean(dat_mcao_mean)
+wilcox.test(dat_sham_mean,dat_mcao_mean)
+
+shapiro.test(dat_mcao_mean)
+
+## AUC and seurat addmordule, 任选一个
+#### AUC
+dat_au <- obj@meta.data[["AUC"]]
+#### addmordule
+dat_au <- obj@meta.data[["Cluster1"]]
+
+dat_au_sham <- dat_au[obj@meta.data[["tmp"]]=='Sham' & obj@meta.data[["celltype"]]=='Microglia']
+dat_au_mcao <- dat_au[obj@meta.data[["tmp"]]=='MCAO' & obj@meta.data[["celltype"]]=='Microglia']
+
+mean(dat_au_sham)
+mean(dat_au_mcao)
+
+hist(dat_au_mcao)
+hist(dat_au_sham)
+
+wilcox.test(dat_au_sham,dat_au_mcao)
+
+
+
+
