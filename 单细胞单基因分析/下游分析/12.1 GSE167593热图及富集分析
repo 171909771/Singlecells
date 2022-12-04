@@ -1,0 +1,202 @@
+
+# 热图 ----------------------------------------------------------------------
+library(monocle)
+library(Seurat)
+library(SeuratWrappers)
+library(ggplot2)
+library(patchwork)
+library(magrittr)
+library(ggsci)
+library(tidyverse)
+
+set.seed(1234)
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+
+
+dat1 <-  readRDS('GSE174574/prunnedcelltype_auc.rds') 
+dat1 <- subset(dat1,celltype=='Microglia')
+dat1 <- subset(dat1,tmp=='MCAO')
+
+dat2 <-  readRDS('GSE167593mcao24single/prunnedcelltype_auc.rds') 
+dat2 <- subset(dat2,celltype=='Microglia')
+dat2 <- subset(dat2,tmp=='MCAO')
+
+sharenames <- intersect(rownames(dat1),rownames(dat2))
+dat1 <- dat2[sharenames,]
+cds <- readRDS('downstream analysis/enrichment_analysis/cdsGSE167593.rds')
+
+
+
+dat1@meta.data[["State"]] <- cds@phenoData@data[["State"]]
+
+DefaultAssay(dat1)
+Idents(dat1) <- dat1@meta.data[["State"]]
+
+dat1.markers <- FindAllMarkers(dat1,
+                               only.pos = TRUE, 
+                               logfc.threshold = 0.5,
+)
+dat1 <- ScaleData(dat1,dat1.markers$gene)
+dat1_heatmap <- dat1@assays[["RNA"]]@scale.data
+
+
+dat1_heatmap <- dat1_heatmap[dat1.markers$gene,c(which(dat1@meta.data[["State"]]%in%1),
+                                                 which(dat1@meta.data[["State"]]%in%2),
+                                                 which(dat1@meta.data[["State"]]%in%3))]
+
+library(ComplexHeatmap)
+library(circlize)
+
+
+p1 <- Heatmap(dat1_heatmap,name = 'Expression',
+              col = colorRamp2(c(-4,0, 4), c("cyan","black","yellow")),
+              top_annotation = HeatmapAnnotation(State=rep(c("1",'2','3'),as.numeric(table(dat1@meta.data[["State"]]))),
+                                                 col=list(State=c("1"='red','2'='blue','3'='green')),
+                                                 annotation_name_side = "left",
+                                                 annotation_legend_param = list(State=list(nrow=1))),
+              
+              heatmap_legend_param = list(direction = "horizontal"),
+              column_title = NULL,
+              row_title = gt_render(c("n=183", "n=3","n=105")), 
+              row_title_gp = gpar(fontsize  = c(10,10,10)),
+              show_row_names =F,
+              show_row_dend = F,
+              show_column_names = F,
+              show_column_dend = F,
+              column_order =1:ncol(dat1_heatmap),
+              row_order =1:nrow(dat1_heatmap),
+              use_raster=F,
+              column_split = rep(1:3, as.numeric(table(dat1@meta.data[["State"]]))),
+              row_split = rep(1:3,as.numeric(table(dat1.markers$cluster))))
+
+draw(p1, merge_legend = TRUE, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+
+
+
+
+
+
+# 富集分析 只取top15--------------------------------------------------------------------
+## 第一次用，后面就直接提取了
+if(F){
+  library(clusterProfiler)
+  GO_database <- 'org.Mm.eg.db' #GO分析指定物种，物种缩写索引表详见http://bioconductor.org/packages/release/BiocViews.html#___OrgDb
+  KEGG_database <- 'mmu' #KEGG分析指定物种，物种缩写索引表详见http://www.genome.jp/kegg/catalog/org_list.html
+  total <- list(state1=bitr(dat1.markers$gene[dat1.markers$cluster==1],fromType = 'SYMBOL',toType = 'ENTREZID',OrgDb = GO_database)$ENTREZID,
+                state3=bitr(dat1.markers$gene[dat1.markers$cluster==3],fromType = 'SYMBOL',toType = 'ENTREZID',OrgDb = GO_database)$ENTREZID)
+  enrich <- compareCluster(total, fun="enrichGO",
+                           ont = "BP",
+                           OrgDb = GO_database,
+                           pvalueCutoff=0.01) # pvalueCutoff显著性应该为0.05
+  df_go_diff <- as.data.frame(enrich)
+  # 只取TOP 15
+  dotplot(enrich,showCategory = 15)
+  df_go_diff.1 <- subset(df_go_diff,Cluster=='state1')[1:15,]
+  df_go_diff.3 <- subset(df_go_diff,Cluster=='state3')[1:15,]
+  df_go_diff <- rbind(df_go_diff.1,df_go_diff.3)
+  library(writexl)
+  write_xlsx(df_go_diff,path = 'downstream analysis/enrichment_analysis/enrichment_GSE167593.xlsx')  # 对应GO Term进行注释
+}
+
+## 直接提取
+df_go_diff <- readxl::read_xlsx('downstream analysis/enrichment_analysis/enrichment_GSE167593.xlsx')
+df_go_diff <- df_go_diff[order(df_go_diff$Parent),]
+df_go_diff$group <- df_go_diff$Parent
+
+
+# GO绘图 --------------------------------------------------------------------
+
+#每个大类之间加空格
+empty_bar <- 3
+nObsType <- nlevels(as.factor(df_go_diff$Description)) #20
+to_add <- data.frame(matrix(NA, empty_bar*length(unique(df_go_diff$group)),ncol(df_go_diff))) # 11列，16个NA
+colnames(to_add) <- colnames(df_go_diff)
+to_add$group <- rep(unique(df_go_diff$group),each=3)
+data <- rbind(df_go_diff, to_add)
+data <- data %>% arrange(group) # 根据group排序
+## 添加id，已编程
+tmp <- data.frame(X=data$Description)
+tmp[is.na(tmp)] <-  paste(rep('tmp',3),rep(1:length(unique(df_go_diff$group)),each=3),sep = "")
+tmp$logi <- (!duplicated(tmp$X))
+tmp$value <- NA
+n=0
+for (i in 1:nrow(tmp)){
+  if(tmp$logi[i]==T){
+    n=n+1
+    tmp$value[i]=n
+  }
+  else{
+    tmp$value[i]=n
+  }
+}
+## 添加id，已编程
+data$id <- tmp$value
+library(tidyverse)
+## 角度
+label_data <- data %>% group_by(id, Description) %>% summarize(tot=sum(-log10(qvalue)))
+number_of_bar <- nrow(label_data)
+angle <- 90 - 360 * (label_data$id-0.2) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+label_data$hjust <- ifelse( angle < -90, 1, 0)
+label_data$angle <- ifelse(angle < -90, angle+180, angle)
+# GO总条目的坐标（title）
+empty_bar <- 4
+base_data <- data %>% 
+  group_by(group) %>% 
+  summarize(start=min(id)-0.45, end=max(id) -0.55) %>% 
+  rowwise() %>%  # 按每一行计算
+  mutate(title=mean(c(start, end)))
+
+#############################出图
+library(ggplot2)
+# remotes::install_github("AllanCameron/geomtextpath")
+library(geomtextpath)
+library(ggnewscale)
+ggplot(data=data,aes(x=as.factor(id),y=-log10(qvalue)))+
+  # Add the stacked bar
+  geom_bar(stat = "identity",alpha=0.5,aes(fill=-log10(qvalue)))+
+  scale_fill_gradientn(colors = c("orange","purple"))+
+  new_scale_fill()+
+  geom_bar(stat = "identity",alpha=0.8,
+           aes(x=as.factor(id),y=ifelse(is.na(Cluster),0,-1),fill=Cluster))+
+  scale_fill_nejm(na.translate = F)+
+  
+  geom_textpath(data=base_data,aes(x=title,y=rep(-3,7),label = c(" ","cell development", 
+                                                                 "protein folding",
+                                                                 "regulation of \nmetabolic process",
+                                                                 "response to stimulus",
+                                                                 "viral process"," ")),
+                linetype = 0, 
+                size = 3, 
+                color = "black",
+                fontface="bold",
+                upright = TRUE) +
+  
+  # theme_minimal()+
+  # 旋转
+  
+  coord_polar(start = 0)+ 
+  theme_minimal()+
+  ylim(-20,30)+
+  
+  theme(
+    #legend.position = "none",
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank(),
+    legend.direction = "vertical", legend.box = "horizontal",
+    legend.position=c(0.5,0.5)
+  ) + coord_polar()+
+  # Add labels on top of each bar
+  geom_text(data=label_data, aes(x=id, 
+                                 y=tot+0.3,
+                                 label=Description, 
+                                 hjust=hjust), 
+            color="black", 
+            fontface="bold",alpha=0.6, size=3, angle= label_data$angle, inherit.aes = FALSE )
+
+
+
+
