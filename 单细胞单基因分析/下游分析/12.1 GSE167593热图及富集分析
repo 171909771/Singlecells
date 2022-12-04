@@ -162,7 +162,7 @@ ggplot(data=data,aes(x=as.factor(id),y=-log10(qvalue)))+
   geom_bar(stat = "identity",alpha=0.8,
            aes(x=as.factor(id),y=ifelse(is.na(Cluster),0,-1),fill=Cluster))+
   scale_fill_manual(values = c('#CC0C00FF','#84BD00FF'), name = "State", 
-                                                          na.translate = F)+
+                                                          na.translate = F,labels=c('1',3))+
   
   geom_textpath(data=base_data,aes(x=title,y=rep(-3,7),label = c(" ","cell development", 
                                                                  "protein folding",
