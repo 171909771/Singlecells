@@ -21,8 +21,6 @@ dat2 <- subset(dat2,celltype=='Microglia')
 dat2 <- subset(dat2,tmp=='MCAO')
 
 sharenames <- intersect(rownames(dat1),rownames(dat2))
-dat1 <- dat1[sharenames,]
-
 dat1 <- dat2[sharenames,]
 
 
