@@ -96,11 +96,11 @@ if(F){
   df_go_diff.3 <- subset(df_go_diff,Cluster=='state3')[1:15,]
   df_go_diff <- rbind(df_go_diff.1,df_go_diff.3)
   library(writexl)
-  write_xlsx(df_go_diff,path = 'downstream analysis/enrichment_GSE174574.xlsx')  # 对应GO Term进行注释
+  write_xlsx(df_go_diff,path = 'downstream analysis/enrichment_analysis/enrichment_GSE174574.xlsx')  # 对应GO Term进行注释
 }
 
 ## 直接提取
-df_go_diff <- readxl::read_xlsx('downstream analysis/enrichment_GSE174574.xlsx')
+df_go_diff <- readxl::read_xlsx('downstream analysis/enrichment_analysis/enrichment_GSE174574.xlsx')
 df_go_diff <- df_go_diff[order(df_go_diff$Parent),]
 df_go_diff$group <- df_go_diff$Parent
 
