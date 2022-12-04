@@ -1,0 +1,49 @@
+library(monocle)
+library(Seurat)
+library(SeuratWrappers)
+library(ggplot2)
+library(patchwork)
+library(magrittr)
+library(ggsci)
+library(tidyverse)
+
+set.seed(1234)
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+
+
+dat1 <-  readRDS('GSE174574/prunnedcelltype_auc.rds') 
+dat1 <- subset(dat1,celltype=='Microglia')
+dat1 <- subset(dat1,tmp=='MCAO')
+
+dat2 <-  readRDS('GSE167593mcao24single/prunnedcelltype_auc.rds') 
+dat2 <- subset(dat2,celltype=='Microglia')
+dat2 <- subset(dat2,tmp=='MCAO')
+
+sharenames <- intersect(rownames(dat1),rownames(dat2))
+dat1 <- dat1[sharenames,]
+
+dat1 <- dat2[sharenames,]
+
+
+DefaultAssay(object = dat1 ) <- "RNA"
+expr_matrix <- as.matrix(dat1@assays[["RNA"]]@counts)
+pd <- dat1@meta.data
+fd <- data.frame(gene_short_name= rownames(expr_matrix) , row.names = rownames(expr_matrix))
+pd <- new("AnnotatedDataFrame", data = pd)
+fd <- new("AnnotatedDataFrame", data = fd)
+cds <- newCellDataSet(cellData=expr_matrix, phenoData  = pd, featureData  = fd,
+                      lowerDetectionLimit = 0.1)
+
+
+cds <- estimateSizeFactors(cds)  
+cds <- estimateDispersions(cds)
+cds <- setOrderingFilter(cds, p2gene_wcl$genenames)
+plot_pc_variance_explained(cds, return_all = F) # norm_method='log'
+### 通过拐点确定n值
+### max_components 的个数决定state个数
+n= 3
+cds <- reduceDimension(cds, num_dim = n,max_components = 2,reduction_method  = 'DDRTree') #GSE174574 max_components=3
+cds <- orderCells(cds,reverse = T)  #GSE174574 reverse=F
+
+saveRDS(cds,file = 'downstream analysis/enrichment_analysis/cdsGSE167593.rds')
