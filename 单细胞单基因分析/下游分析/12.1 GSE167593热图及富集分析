@@ -52,7 +52,7 @@ library(circlize)
 p1 <- Heatmap(dat1_heatmap,name = 'Expression',
               col = colorRamp2(c(-4,0, 4), c("cyan","black","yellow")),
               top_annotation = HeatmapAnnotation(State=rep(c("1",'2','3'),as.numeric(table(dat1@meta.data[["State"]]))),
-                                                 col=list(State=c("1"='red','2'='blue','3'='green')),
+                                                 col=list(State=c("1"='#CC0C00FF','2'='#5C88DAFF','3'='#84BD00FF')),
                                                  annotation_name_side = "left",
                                                  annotation_legend_param = list(State=list(nrow=1))),
               
@@ -161,7 +161,8 @@ ggplot(data=data,aes(x=as.factor(id),y=-log10(qvalue)))+
   new_scale_fill()+
   geom_bar(stat = "identity",alpha=0.8,
            aes(x=as.factor(id),y=ifelse(is.na(Cluster),0,-1),fill=Cluster))+
-  scale_fill_nejm(na.translate = F)+
+  scale_fill_manual(values = c('#CC0C00FF','#84BD00FF'), name = "State", 
+                                                          na.translate = F)+
   
   geom_textpath(data=base_data,aes(x=title,y=rep(-3,7),label = c(" ","cell development", 
                                                                  "protein folding",
