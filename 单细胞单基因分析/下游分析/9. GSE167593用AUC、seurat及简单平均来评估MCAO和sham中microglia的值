@@ -15,6 +15,8 @@ aucs <- as.numeric(cells_AUC@assays@data@listData[["AUC"]])
 obj$AUC <- aucs
 ## 计算addmordule值
 obj <- AddModuleScore(object = obj,list(p2gene_wcl$genenames))
+## average for p2'alra_data
+obj@meta.data[["P2average"]] <- apply(obj[p2gene_wcl$genenames,]@assays[["alra"]]@data, 2, mean)
 saveRDS(obj,'GSE167593mcao24single/prunnedcelltype_auc.rds')
 
 ############################################  开始进行比较
@@ -22,13 +24,10 @@ saveRDS(obj,'GSE167593mcao24single/prunnedcelltype_auc.rds')
 ## 简单平均
 p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
 p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+obj <-  readRDS('GSE167593mcao24single/prunnedcelltype_auc.rds') 
+dat_mcao_mean <- obj@meta.data[["P2average"]][obj@meta.data[["tmp"]]=='MCAO' & obj@meta.data[["celltype"]]=='Microglia']
+dat_sham_mean <- obj@meta.data[["P2average"]][obj@meta.data[["tmp"]]=='Sham' & obj@meta.data[["celltype"]]=='Microglia']
 
-dat <- data.frame(obj[p2gene_wcl$genenames,]@assays[["alra"]]@data)
-dat_sham <- dat[obj@meta.data[["tmp"]]=='Sham' & obj@meta.data[["celltype"]]=='Microglia']
-dat_mcao <- dat[obj@meta.data[["tmp"]]=='MCAO' & obj@meta.data[["celltype"]]=='Microglia']
-
-dat_sham_mean <- apply(dat_sham, 2, mean)
-dat_mcao_mean <- apply(dat_mcao, 2, mean)
 
 hist(dat_sham_mean)
 hist(dat_mcao_mean)
