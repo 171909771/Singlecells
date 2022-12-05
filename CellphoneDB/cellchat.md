@@ -188,3 +188,13 @@ plotGeneExpression(cellchat, signaling = "TGFb")
 plotGeneExpression(cellchat, signaling = "TGFb", type = "dot",color.use="red")
 ```
 
+
+- http://htmlpreview.github.io/?https://github.com/sqjin/CellChat/blob/master/tutorial/CellChat-vignette.html
+## 官网上还有后续，包括：
+- 确定某细胞类型是发起者还是接收者
+- 虚拟多个pattern（包括很多信号）来确定哪些细胞类型公用一组信号
+- 对基因进行聚类，了解共同功能的基因集
+
+
+
+
