@@ -56,11 +56,11 @@ cellchat@DB <- CellChatDB.use # set the used database in the object
 cellchat <- subsetData(cellchat) 
 future::plan("multiprocess", workers = 4) 
 #相当于Seurat的FindMarkers，找每个细胞群中高表达的配体受体 
-cellchat <- identifyOverExpressedGenes(cellchat) 
-cellchat <- identifyOverExpressedInteractions(cellchat) 
+cellchat <- identifyOverExpressedGenes(cellchat)    # 计算高表达的配体受体基因
+cellchat <- identifyOverExpressedInteractions(cellchat)      # 计算受体高表达、配体也高表达的基因，然后配成对
 #Identify over-expressed ligand-receptor interactions (pairs) within the used CellChatDB 
 #上一步运行的结果储存在cellchat@LR$LRsig 
-cellchat <- projectData(cellchat, PPI.human) 
+cellchat <- projectData(cellchat, PPI.human)      # 通过PPI的数据库进行取0化，相当于alra的结果
 #找到配体受体关系后，projectData将配体受体对的表达值投射到PPI上，来对@data.signaling中的表达值进行校正。结果保存在@data.project
 
 ## 计算
