@@ -12,3 +12,12 @@ Cerebro shiny 可视化
 DefaultAssay
 ----
 设置assay的默认栏
+
+Findmarker 中的logFC取值
+----
+- https://zhuanlan.zhihu.com/p/569706461
+公式：log2(mean(expm1(group1.xgroup1.x))+1)-log2(mean(expm1(group2.x))+1)
+
+group1.x和group2.x是RNA的data数据
+
+简而言之：log2（平均化（标准化的值））+1）
