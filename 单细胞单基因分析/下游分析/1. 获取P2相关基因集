@@ -8,7 +8,7 @@ options (warn = -1)
 obj1 <- readRDS('GSE167593mcao24single/prunnedcelltype_auc.rds')
 obj2 <- readRDS('GSE174574/prunnedcelltype_auc.rds')
 
-# 取共同有的基因，并用meta方法进行合并
+# 取共同有的细胞类型，并用meta方法进行合并
 shareindex <- levels(obj1@meta.data[["celltype"]])[levels(obj1@meta.data[["celltype"]]) %in% 
                                                      levels(obj2@meta.data[["celltype"]])]
 names(shareindex) <- shareindex
@@ -81,7 +81,7 @@ geneset1 <- lapply(p2group, function(x){
   })})
 
 
-# 取非共同的基因
+# 取非共同的细胞类型
 
 resid1 <- levels(obj1@meta.data[["celltype"]])[!levels(obj1@meta.data[["celltype"]]) %in% shareindex]
 resid2 <- levels(obj2@meta.data[["celltype"]])[!levels(obj2@meta.data[["celltype"]]) %in% shareindex]
