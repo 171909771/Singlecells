@@ -1,0 +1,38 @@
+# 需要geneset1，geneset2，geneset3
+BiocManager::install('ggvenn')
+library(patchwork)
+library(ggsci)
+library(ggvenn)
+library(ggplot2)
+
+# List of items
+vennpic1 <- do.call(cbind,lapply(geneset1, function(f){
+  lapply(f,function(n){
+    n$genenames
+  })
+}))
+vennpic2 <- do.call(cbind,lapply(geneset2, function(f){
+  lapply(f,function(n){
+    n$genenames
+  })
+}))
+vennpic3 <- do.call(cbind,lapply(geneset3, function(f){
+  lapply(f,function(n){
+    n$genenames
+  })
+}))
+vennpic <- rbind(vennpic1,rbind(vennpic2,vennpic3))
+vennpicname<- rownames(vennpic)
+names(vennpicname) <- vennpicname
+vennpic <- lapply(vennpicname, function(x){
+  ggvenn(vennpic[x,]) +
+    labs(title=x)+
+    theme_void()+
+    theme(plot.title=element_text( hjust=0.5, vjust=-15))+scale_fill_nejm()
+  
+})
+
+saveRDS(vennpic,file = 'downstream analysis/vennpic.rds')
+
+vennpic <- readRDS('downstream analysis/vennpic.rds')
+vennpic$Lymphocytes+vennpic$Oligodendrocytes
