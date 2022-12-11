@@ -24,15 +24,42 @@ vennpic3 <- do.call(cbind,lapply(geneset3, function(f){
 vennpic <- rbind(vennpic1,rbind(vennpic2,vennpic3))
 vennpicname<- rownames(vennpic)
 names(vennpicname) <- vennpicname
+# vennpic <- lapply(vennpicname, function(x){
+#   ggvenn(vennpic[x,]) +
+#     labs(title=x)+
+#     theme_void()+
+#     theme(plot.title=element_text( hjust=0.5, vjust=-15))+scale_fill_nejm()
+# 
+# })
+
 vennpic <- lapply(vennpicname, function(x){
-  ggvenn(vennpic[x,]) +
+  ggvenn(vennpic[x,],set_name_size = 4,text_size = 4 ,show_percentage = F) +
     labs(title=x)+
     theme_void()+
-    theme(plot.title=element_text( hjust=0.5, vjust=-15))+scale_fill_nejm()
+    theme(plot.title=element_text( hjust=0.5))+scale_fill_nejm()
   
 })
+
+
+vennpic[["Microglia"]] <- vennpic[["Microglia"]]+theme(plot.title=element_text( hjust=0.5, vjust=-10))
 
 saveRDS(vennpic,file = 'downstream analysis/vennpic.rds')
 
 vennpic <- readRDS('downstream analysis/vennpic.rds')
-vennpic$Lymphocytes+vennpic$Oligodendrocytes
+
+
+
+
+layout <- "
+#BC#
+AKKD
+EKKF
+GHIJ
+"
+
+
+ figs3 <- vennpic$Lymphocytes +vennpic$Oligodendrocytes +vennpic$`Neural progenitor cells` + 
+  vennpic$`Monocytes/Macrophages`+vennpic$Astrocytes+vennpic$Granulocytes+
+  vennpic$`Ependymal cells`+vennpic$Neurons+vennpic$`Endothelial cells`+
+  vennpic$`Perivascular cells`+vennpic$Microglia+
+  plot_layout(design = layout)
