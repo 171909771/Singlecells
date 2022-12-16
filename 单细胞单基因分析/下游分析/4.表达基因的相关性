@@ -1,0 +1,289 @@
+
+
+# GSE167593 ---------------------------------------------------------------
+
+
+
+set.seed(1234)
+library(Seurat)
+obj1 <- readRDS('GSE167593mcao24single/prunnedcelltype_auc.rds')
+
+
+
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+
+
+obj1 <- AddModuleScore(obj1,list(p2gene_wcl$genenames))
+
+
+obj1_matrix.melt <- data.frame(value=obj1@meta.data[["Cluster1"]],Group=obj1@meta.data[["tmp"]],
+                               celltype=obj1@meta.data[["celltype"]])
+raw_microglia_sham_addmodue <- subset(obj1_matrix.melt,Group=='Sham')
+raw_microglia_mcao_addmodue <- subset(obj1_matrix.melt,Group=='MCAO')
+
+
+
+
+tmp <- lapply(1:100, function(x){
+  
+  set.seed(x)
+  p2gene_test <- p2gene_wcl[sample(1:88,66),]
+  
+  obj_test <- AddModuleScore(obj1,list(p2gene_test$genenames))
+  
+  obj1_matrix.melt1 <- data.frame(value=obj_test@meta.data[["Cluster1"]],Group=obj_test@meta.data[["tmp"]],
+                                  celltype=obj_test@meta.data[["celltype"]])
+  sham_microglia_addmodue1 <- subset(obj1_matrix.melt1, Group=='Sham')
+  cor_sham <- cor(sham_microglia_addmodue1$value,raw_microglia_sham_addmodue$value)
+  
+
+  
+  mcao_microglia_addmodue1 <- subset(obj1_matrix.melt1, Group=='MCAO')
+  cor_mcao <- cor(mcao_microglia_addmodue1$value,raw_microglia_mcao_addmodue$value)
+  
+  c(cor_sham=cor_sham,cor_mcao=cor_mcao)
+})
+
+
+GSE167593_seurat <- data.frame(do.call(rbind,tmp))
+
+
+
+
+
+# 计算AUC值及addmordule值
+library(AUCell)
+library(clusterProfiler)
+library(ggplot2)
+library(Seurat)
+library(SeuratData)
+## 计算AUC值
+
+
+
+obj1_auc_test <- subset(obj1,tmp=='Sham')
+cells_rankings1 <- AUCell_buildRankings(obj1_auc_test@assays[["alra"]]@data)  # 关键一步
+# ?AUCell_buildRankings
+cells_AUC1 <- AUCell_calcAUC(p2gene_wcl$genenames, cells_rankings1, aucMaxRank=nrow(cells_rankings1)*0.1)
+aucs1 <- as.numeric(cells_AUC1@assays@data@listData[["AUC"]])
+
+
+
+
+
+GSE167593_AUC_sham <- lapply(1:100, function(x){
+  set.seed(x)
+  p2gene_test <- p2gene_wcl[sample(1:88,66),]
+  
+  cells_AUC_test <- AUCell_calcAUC(p2gene_test$genenames, cells_rankings1, aucMaxRank=nrow(cells_rankings1)*0.1)
+  auc_test <- as.numeric(cells_AUC_test@assays@data@listData[["AUC"]])
+  cor(aucs1,auc_test)
+  
+})
+
+GSE167593_AUC_sham <- data.frame(do.call(rbind,GSE167593_AUC_sham))
+
+
+obj1_auc_test <- subset(obj1,tmp=='MCAO')
+cells_rankings1 <- AUCell_buildRankings(obj1_auc_test@assays[["alra"]]@data)  # 关键一步
+# ?AUCell_buildRankings
+cells_AUC1 <- AUCell_calcAUC(p2gene_wcl$genenames, cells_rankings1, aucMaxRank=nrow(cells_rankings1)*0.1)
+aucs1 <- as.numeric(cells_AUC1@assays@data@listData[["AUC"]])
+
+
+GSE167593_AUC_mcao <- lapply(1:100, function(x){
+  set.seed(x)
+  p2gene_test <- p2gene_wcl[sample(1:88,66),]
+  
+  cells_AUC_test <- AUCell_calcAUC(p2gene_test$genenames, cells_rankings1, aucMaxRank=nrow(cells_rankings1)*0.1)
+  auc_test <- as.numeric(cells_AUC_test@assays@data@listData[["AUC"]])
+  cor(aucs1,auc_test)
+  
+})
+
+
+GSE167593_AUC_mcao <- data.frame(do.call(rbind,GSE167593_AUC_mcao))
+
+
+GSE167593_boostrap <- cbind(GSE167593_seurat,cbind(GSE167593_AUC_sham,GSE167593_AUC_mcao))
+
+colnames(GSE167593_boostrap) <- c('seurat_sham','seurat_mcao','AUC_sham','AUC_mcao')
+
+
+
+saveRDS(GSE167593_boostrap,file = 'GSE167593_boostrap.rds')
+
+
+# GSE174574 ---------------------------------------------------------------
+
+
+set.seed(1234)
+library(Seurat)
+obj1 <- readRDS('GSE174574/prunnedcelltype_auc.rds')
+
+
+
+p2gene <- readRDS('downstream analysis/p2_for_micrglia_0.6.rds')
+p2gene_wcl <- subset(p2gene,value.MCAO>0.74 & value.Sham>0.74)
+
+
+obj1 <- AddModuleScore(obj1,list(p2gene_wcl$genenames))
+
+
+obj1_matrix.melt <- data.frame(value=obj1@meta.data[["Cluster1"]],Group=obj1@meta.data[["tmp"]],
+                               celltype=obj1@meta.data[["celltype"]])
+raw_microglia_sham_addmodue <- subset(obj1_matrix.melt,Group=='Sham')
+raw_microglia_mcao_addmodue <- subset(obj1_matrix.melt,Group=='MCAO')
+
+
+
+
+tmp <- lapply(1:100, function(x){
+  
+  set.seed(x)
+  p2gene_test <- p2gene_wcl[sample(1:88,66),]
+  
+  obj_test <- AddModuleScore(obj1,list(p2gene_test$genenames))
+  
+  obj1_matrix.melt1 <- data.frame(value=obj_test@meta.data[["Cluster1"]],Group=obj_test@meta.data[["tmp"]],
+                                  celltype=obj_test@meta.data[["celltype"]])
+  sham_microglia_addmodue1 <- subset(obj1_matrix.melt1, Group=='Sham')
+  cor_sham <- cor(sham_microglia_addmodue1$value,raw_microglia_sham_addmodue$value)
+  
+  
+  
+  mcao_microglia_addmodue1 <- subset(obj1_matrix.melt1, Group=='MCAO')
+  cor_mcao <- cor(mcao_microglia_addmodue1$value,raw_microglia_mcao_addmodue$value)
+  
+  c(cor_sham=cor_sham,cor_mcao=cor_mcao)
+})
+
+
+GSE174574_seurat <- data.frame(do.call(rbind,tmp))
+
+saveRDS(GSE174574_seurat,'GSE174574_seurat.rds')
+
+
+
+
+
+
+
+
+
+
+# 计算AUC值及addmordule值
+library(AUCell)
+library(clusterProfiler)
+library(ggplot2)
+library(Seurat)
+library(SeuratData)
+## 计算AUC值
+
+
+
+obj <-  readRDS('GSE174574/prunnedcelltype_auc.rds') 
+
+matrix <- obj@assays[["alra"]]@data
+half <- round(ncol(matrix)/2)
+ExprMat_1 <- matrix[,1:half]
+ExprMat_2 <- matrix[,(half+1):ncol(matrix)]
+
+saveRDS(ExprMat_1,file = 'GSE174574/ExprMat_1.rds')
+saveRDS(ExprMat_2,file = 'GSE174574/ExprMat_2.rds')
+
+ExprMat_1 <- readRDS('GSE174574/ExprMat_1.rds')
+ExprMat_2 <- readRDS('GSE174574/ExprMat_2.rds')
+
+
+cells_rankings_1 <- AUCell_buildRankings(ExprMat_1)
+saveRDS(cells_rankings_1,file = 'GSE174574/cells_rankings_1.rds')
+
+cells_rankings_2 <- AUCell_buildRankings(ExprMat_2)
+saveRDS(cells_rankings_2,file = 'GSE174574/cells_rankings_2.rds')
+
+cells_rankings_1 <- readRDS('GSE174574/cells_rankings_1.rds')
+cells_rankings_2 <- readRDS('GSE174574/cells_rankings_2.rds')
+
+cells_rankings <- AUCell::cbind(cells_rankings_1, cells_rankings_2)
+
+
+
+
+
+saveRDS(cells_rankings,file = 'GSE174574/cells_rankings.rds')
+
+
+## onset
+
+cells_rankings <-  readRDS('GSE174574/cells_rankings.rds') 
+
+obj <-  readRDS('GSE174574/prunnedcelltype_auc.rds') 
+
+cells_rankings_sham <- cells_rankings[,obj@meta.data[["tmp"]]=='Sham']
+
+
+cells_AUC1 <- AUCell_calcAUC(p2gene_wcl$genenames, cells_rankings_sham, aucMaxRank=nrow(cells_rankings_sham)*0.1)
+aucs1 <- as.numeric(cells_AUC1@assays@data@listData[["AUC"]])
+
+
+
+
+
+GSE174574_AUC_sham <- lapply(1:100, function(x){
+  set.seed(x)
+  p2gene_test <- p2gene_wcl[sample(1:88,66),]
+  
+  cells_AUC_test <- AUCell_calcAUC(p2gene_test$genenames, cells_rankings_sham, aucMaxRank=nrow(cells_rankings_sham)*0.1)
+  auc_test <- as.numeric(cells_AUC_test@assays@data@listData[["AUC"]])
+  cor(aucs1,auc_test)
+  
+})
+
+GSE174574_AUC_sham <- data.frame(do.call(rbind,GSE174574_AUC_sham))
+
+
+
+cells_rankings_mcao <- cells_rankings[,obj@meta.data[["tmp"]]=='MCAO']
+
+
+cells_AUC1 <- AUCell_calcAUC(p2gene_wcl$genenames, cells_rankings_mcao, aucMaxRank=nrow(cells_rankings_mcao)*0.1)
+aucs1 <- as.numeric(cells_AUC1@assays@data@listData[["AUC"]])
+
+
+
+GSE174574_AUC_mcao <- lapply(1:100, function(x){
+  set.seed(x)
+  p2gene_test <- p2gene_wcl[sample(1:88,66),]
+  
+  cells_AUC_test <- AUCell_calcAUC(p2gene_test$genenames, cells_rankings_mcao, aucMaxRank=nrow(cells_rankings_mcao)*0.1)
+  auc_test <- as.numeric(cells_AUC_test@assays@data@listData[["AUC"]])
+  cor(aucs1,auc_test)
+  
+})
+
+
+GSE174574_AUC_mcao <- data.frame(do.call(rbind,GSE174574_AUC_mcao))
+GSE174574_seurat <- readRDS('GSE174574_seurat.rds')
+
+GSE174574_boostrap <- cbind(GSE174574_seurat,cbind(GSE174574_AUC_sham,GSE174574_AUC_mcao))
+
+colnames(GSE174574_boostrap) <- c('seurat_sham','seurat_mcao','AUC_sham','AUC_mcao')
+
+saveRDS(GSE174574_boostrap,file = 'GSE174574_boostrap.rds')
+
+
+# 整合数据保存 ---------------------------------------------------------------
+
+GSE167593 <- readRDS('GSE167593_boostrap.rds')
+GSE174574 <- readRDS('GSE174574_boostrap.rds')
+
+boostrap <- cbind(GSE167593,GSE174574)
+
+
+saveRDS(boostrap,file = 'downstream analysis/boostrap.rds')
+
+
+
+
