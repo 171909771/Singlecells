@@ -1,0 +1,54 @@
+library(Seurat)
+library(dplyr)
+library(SeuratData)
+library(patchwork) #最强大的拼图包
+library(ggplot2)
+library(CellChat)
+library(ggalluvial)
+library(svglite)
+
+
+# 整理数据，将monocle state和seurat 融合
+dat1 <- readRDS('GSE167593mcao24single/prunnedcelltype_auc.rds')
+dat1 <- subset(dat1,tmp=='MCAO')
+cds <- readRDS('downstream analysis/enrichment_analysis/cdsGSE167593.rds')
+annot_microglia <- paste('Microglia',cds@phenoData@data[["State"]],sep="_")
+dat1@meta.data[["cellchat"]] <- as.character(dat1@meta.data[["celltype"]])
+dat1@meta.data[["cellchat"]][dat1@meta.data[["cellchat"]]=='Microglia']=annot_microglia
+levels(dat1@meta.data[["cellchat"]]) <- unique(dat1@meta.data[["cellchat"]])
+dat1@meta.data[["cellchat"]] <- as.factor(dat1@meta.data[["cellchat"]])
+
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Microglia_3']='Microglia_L'
+
+
+# 载入cellchat
+cellchat <- createCellChat(object=dat1,group.by = "cellchat") 
+
+
+
+
+# 导入cellchat数据库
+CellChatDB <- CellChatDB.mouse
+CellChatDB.use <- subsetDB(CellChatDB, search = "Secreted Signaling") 
+cellchat@DB <- CellChatDB.use
+## 在矩阵的所有的基因中提取signaling gene，结果保存在data.signaling(13714个基因，过滤完只有270个） 
+cellchat <- subsetData(cellchat) 
+
+
+#相当于Seurat的FindMarkers，找每个细胞群中高表达的配体受体 
+cellchat <- identifyOverExpressedGenes(cellchat)    # 计算高表达的配体受体基因
+cellchat <- identifyOverExpressedInteractions(cellchat)      # 计算受体高表达、配体也高表达的基因，然后配成对
+#Identify over-expressed ligand-receptor interactions (pairs) within the used CellChatDB 
+#上一步运行的结果储存在cellchat@LR$LRsig 
+cellchat <- projectData(cellchat, PPI.human)      # 通过PPI的数据库进行取0化，相当于alra的结果
+#找到配体受体关系后，projectData将配体受体对的表达值投射到PPI上，来对@data.signaling中的表达值进行校正。结果保存在@data.project
+
+## 计算
+#根据表达值推测细胞互作的概率（cellphonedb是用平均表达值代表互作强度）。
+cellchat <- computeCommunProb(cellchat, raw.use = FALSE, population.size = TRUE) #如果不想用上一步PPI矫正的结果，raw.use = TRUE即可。 # Filter out the cell-cell communication if there are only few number of cells in certain cell groups cellchat <- filterCommunication(cellchat, min.cells = 10) 
+df.net <- subsetCommunication(cellchat) 
+
+cellchat <- computeCommunProbPathway(cellchat) 
+df.netp <- subsetCommunication(cellchat, slot.name = "netP") 
+
+saveRDS(cellchat,file='downstream analysis/cellchat/GSE167593cellchat.rds')
