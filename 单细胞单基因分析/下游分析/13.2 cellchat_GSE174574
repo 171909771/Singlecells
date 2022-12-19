@@ -52,3 +52,60 @@ cellchat <- computeCommunProbPathway(cellchat)
 df.netp <- subsetCommunication(cellchat, slot.name = "netP") 
 
 saveRDS(cellchat,file='downstream analysis/cellchat/GSE174574cellchat.rds')
+
+
+######################出图
+library(Seurat)
+library(dplyr)
+library(SeuratData)
+library(patchwork) #最强大的拼图包
+library(ggplot2)
+library(CellChat)
+library(ggalluvial)
+library(svglite)
+cellchat <- readRDS('downstream analysis/cellchat/GSE174574cellchat.rds')
+## 探索ligand
+df.net <- subsetCommunication(cellchat) 
+
+test_3_sour <- subset(df.net,source=='Microglia_L')
+test_1_sour <- subset(df.net,source=='Microglia_1')
+
+unique(test_1_sour$ligand)
+unique(test_3_sour$ligand)
+
+unique(test_3_sour$ligand[(!test_3_sour$ligand %in% test_1_sour$ligand)])
+
+unique(test_1_sour$ligand[(!test_1_sour$ligand %in% test_3_sour$ligand)])
+
+
+
+## 探索receptros
+test_3 <- subset(df.net,target=='Microglia_L')
+test_1 <- subset(df.net,target=='Microglia_1')
+unique(test_1$receptor)
+unique(test_3$receptor)
+unique(test_3$receptor[(!test_3$receptor %in% test_1$receptor)])
+
+
+unique(test_1$receptor[(!test_1$receptor %in% test_3$receptor)])
+
+
+levels(cellchat@idents)
+
+
+
+
+## 作图
+pairLR.use <- extractEnrichedLR(cellchat, signaling = c("CCL","CXCL",'CSF'))
+pairLR.use1 <- pairLR.use[c(5,7,13,15,17),,drop=F]
+
+fig5e <- netVisual_bubble(cellchat, sources.use = c(8),pairLR.use=pairLR.use1,
+                          
+                          targets.use = c(4,5,9,10,11), remove.isolate = FALSE)
+
+
+pairLR.use <- extractEnrichedLR(cellchat, signaling = c('VEGF', 'SPP1', 'ANGPTL'))
+pairLR.use1 <- pairLR.use[c(1,3,4,7),,drop=F]
+fig5f <- netVisual_bubble(cellchat, sources.use = c(1,2,3,4,5,9,10,11,12),pairLR.use=pairLR.use1,
+                          
+                          targets.use = c(8), remove.isolate = FALSE)
