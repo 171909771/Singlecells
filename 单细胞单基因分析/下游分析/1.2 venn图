@@ -22,6 +22,7 @@ vennpic3 <- do.call(cbind,lapply(geneset3, function(f){
   })
 }))
 vennpic <- rbind(vennpic1,rbind(vennpic2,vennpic3))
+colnames(vennpic) <- c('tMCAO/R', 'Sham')
 vennpicname<- rownames(vennpic)
 names(vennpicname) <- vennpicname
 # vennpic <- lapply(vennpicname, function(x){
