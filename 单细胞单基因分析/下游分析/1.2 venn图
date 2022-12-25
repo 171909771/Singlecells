@@ -1,5 +1,5 @@
 # 需要geneset1，geneset2，geneset3
-BiocManager::install('ggvenn')
+# BiocManager::install('ggvenn')
 library(patchwork)
 library(ggsci)
 library(ggvenn)
@@ -22,8 +22,10 @@ vennpic3 <- do.call(cbind,lapply(geneset3, function(f){
   })
 }))
 vennpic <- rbind(vennpic1,rbind(vennpic2,vennpic3))
-colnames(vennpic) <- c('tMCAO/R', 'Sham')
-vennpicname<- rownames(vennpic)
+colnames(vennpic) <- c('M','S')
+
+vennpicname<- c("LYM","OLG","MG","NPC","Mo/Ma","AS","GRA","EpC","NC","EC","PC")
+rownames(vennpic) <- vennpicname
 names(vennpicname) <- vennpicname
 # vennpic <- lapply(vennpicname, function(x){
 #   ggvenn(vennpic[x,]) +
@@ -34,7 +36,7 @@ names(vennpicname) <- vennpicname
 # })
 
 vennpic <- lapply(vennpicname, function(x){
-  ggvenn(vennpic[x,],set_name_size = 4,text_size = 4 ,show_percentage = F) +
+  ggvenn(vennpic[x,],set_name_size = 3,text_size = 4 ,show_percentage = F) +
     labs(title=x)+
     theme_void()+
     theme(plot.title=element_text( hjust=0.5))+scale_fill_nejm()
@@ -42,11 +44,18 @@ vennpic <- lapply(vennpicname, function(x){
 })
 
 
-vennpic[["Microglia"]] <- vennpic[["Microglia"]]+theme(plot.title=element_text( hjust=0.5, vjust=-10))
+
+
+
+
+
+
+vennpic[["MG"]] <- vennpic[["MG"]]+theme(plot.title=element_text( hjust=0.5, vjust=-7))
 
 saveRDS(vennpic,file = 'downstream analysis/vennpic.rds')
 
 vennpic <- readRDS('downstream analysis/vennpic.rds')
+
 
 
 
@@ -59,8 +68,8 @@ GHIJ
 "
 
 
- figs3 <- vennpic$Lymphocytes +vennpic$Oligodendrocytes +vennpic$`Neural progenitor cells` + 
-  vennpic$`Monocytes/Macrophages`+vennpic$Astrocytes+vennpic$Granulocytes+
-  vennpic$`Ependymal cells`+vennpic$Neurons+vennpic$`Endothelial cells`+
-  vennpic$`Perivascular cells`+vennpic$Microglia+
+figs3 <- vennpic$LYM +vennpic$OLG +vennpic$NPC + 
+  vennpic$`Mo/Ma`+vennpic$AS+vennpic$GRA+
+  vennpic$EpC+vennpic$NC+vennpic$EC+
+  vennpic$PC+vennpic$MG+
   plot_layout(design = layout)
