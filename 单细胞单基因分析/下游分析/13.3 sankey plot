@@ -27,6 +27,7 @@ p <- sankeyNetwork(Links = links, Nodes = nodes, Source = "IDsource", Target = "
 
 p
 
+#### 上图保存后转换为jepg
 require(webshot)
 webshot::webshot("fig5_2.html", "fig5_2.jpeg", vwidth = 3000, vheight = 1500)
 
