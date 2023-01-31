@@ -1,0 +1,32 @@
+library(networkD3)
+library(dplyr)
+
+ligand_gene <- c("Igf1"  ,  "Cxcl2" ,  "Csf1"   , "Nampt" ,  "Ccl7" )
+receptor_gene <- c('Itgav', 'Itgb1', 'Itgb5', 'Itga5', "Sdc3"  ,  "Axl"  ,  "Flt1")
+
+
+links <- data.frame(
+  source=c(rep('Ligands',6),rep('Receptors',7),'Tnfsf12',ligand_gene,receptor_gene), 
+  target=c('Tnfsf12',ligand_gene,receptor_gene,'NA','Pass','Pass','Fail','Pass','Fail',rep('Fail',6),'Pass'), 
+  value=c(rep(1,26))
+)
+
+# From these flows we need to create a node data frame: it lists every entities involved in the flow
+nodes <- data.frame(
+  name=c(as.character(links$source), as.character(links$target)) %>% 
+    unique()
+)
+
+# With networkD3, connection must be provided using id, not using real name like in the links dataframe.. So we need to reformat it.
+links$IDsource <- match(links$source, nodes$name)-1 
+links$IDtarget <- match(links$target, nodes$name)-1
+
+# Make the Network. I call my colour scale with the colourScale argument
+p <- sankeyNetwork(Links = links, Nodes = nodes, Source = "IDsource", Target = "IDtarget",  fontSize = 40,
+                   Value = "value", NodeID = "name",LinkGroup='source')
+
+p
+
+require(webshot)
+webshot::webshot("fig5_2.html", "fig5_2.jpeg", vwidth = 3000, vheight = 1500)
+
