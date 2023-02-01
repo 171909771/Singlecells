@@ -18,7 +18,17 @@ dat1@meta.data[["cellchat"]][dat1@meta.data[["cellchat"]]=='Microglia']=annot_mi
 levels(dat1@meta.data[["cellchat"]]) <- unique(dat1@meta.data[["cellchat"]])
 dat1@meta.data[["cellchat"]] <- as.factor(dat1@meta.data[["cellchat"]])
 
-levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Microglia_3']='Microglia_L'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Microglia_3']='MG_L'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Astrocytes']='AS'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Ependymal cells']='EC'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Granulocytes']='GRA'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Lymphocytes']='LYM'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Microglia_1']='MG_H'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Monocytes/Macrophages']='Mo/Ma'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Neural progenitor cells']='NPC'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Neurons']='NE'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Oligodendrocytes']='OLG'
+
 
 
 # 载入cellchat
@@ -67,7 +77,7 @@ cellchat <- readRDS('downstream analysis/cellchat/GSE167593cellchat.rds')
 df.net <- subsetCommunication(cellchat) 
 
 test_3_sour <- subset(df.net,source=='Microglia_L')
-test_1_sour <- subset(df.net,source=='Microglia_1')
+test_1_sour <- subset(df.net,source=='Microglia_H')
 
 unique(test_1_sour$ligand)
 unique(test_3_sour$ligand)
@@ -80,7 +90,7 @@ unique(test_1_sour$ligand[(!test_1_sour$ligand %in% test_3_sour$ligand)])
 
 ## 探索receptros
 test_3 <- subset(df.net,target=='Microglia_L')
-test_1 <- subset(df.net,target=='Microglia_1')
+test_1 <- subset(df.net,target=='Microglia_H')
 unique(test_1$receptor)
 unique(test_3$receptor)
 unique(test_3$receptor[(!test_3$receptor %in% test_1$receptor)])
@@ -99,15 +109,15 @@ pairLR.use <- extractEnrichedLR(cellchat, signaling = c("CXCL","CSF",'VISFATIN',
 pairLR.use1 <- pairLR.use[c(1,4,5,6,7,8,9,10),,drop=F]
 
 fig5b <- netVisual_bubble(cellchat, sources.use = c(7),pairLR.use=pairLR.use1,
-                 
-                 targets.use = c(2,3,8,9,10,11), remove.isolate = FALSE)
+                          
+                          targets.use = c(2,3,8,9,10,11), remove.isolate = FALSE)
 
 
 pairLR.use <- extractEnrichedLR(cellchat, signaling = c('SPP1', 'PTN' ,'GAS' ,'PROS'))
 pairLR.use1 <- pairLR.use[c(2,3,4,5,8,11,14),,drop=F]
 fig5c <- netVisual_bubble(cellchat, sources.use = c(1,2,3,4,8,9,10,11),pairLR.use=pairLR.use1,
-                 
-                 targets.use = c(7), remove.isolate = FALSE)
+                          
+                          targets.use = c(7), remove.isolate = FALSE)
 
 
 fig5b+fig5c
