@@ -17,7 +17,20 @@ dat1@meta.data[["cellchat"]] <- as.character(dat1@meta.data[["celltype"]])
 dat1@meta.data[["cellchat"]][dat1@meta.data[["cellchat"]]=='Microglia']=annot_microglia
 levels(dat1@meta.data[["cellchat"]]) <- unique(dat1@meta.data[["cellchat"]])
 dat1@meta.data[["cellchat"]] <- as.factor(dat1@meta.data[["cellchat"]])
+
+
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Astrocytes']='AS'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Endothelial cells']='EC'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Ependymal cells']='EpC'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Granulocytes']='GRA'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Lymphocytes']='LYM'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Microglia_1']='Microglia_H'
 levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Microglia_3']='Microglia_L'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Monocytes/Macrophages']='Mo/Ma'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Neural progenitor cells']='NPC'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Oligodendrocytes']='OLG'
+levels(dat1@meta.data[["cellchat"]])[levels(dat1@meta.data[["cellchat"]])=='Perivascular cells']='PC'
+
 
 
 # 载入cellchat
