@@ -1,0 +1,57 @@
+cellchat <- readRDS('downstream analysis/cellchat/GSE167593cellchat.rds')
+
+
+GSE167593_ligands <- netVisual_bubble(cellchat, sources.use = c('MG_L','MG_H'), targets.use=c('AS','EC','GRA','LYM','Mo/Ma','NPC','OLG','PC','EpC'),remove.isolate = T)+
+  labs(title = 'GSE167593')+ theme(plot.title = element_text(hjust = 0.5))
+GSE167593_receptors <- netVisual_bubble(cellchat, sources.use=c('AS','EC','GRA','LYM','Mo/Ma','NPC','NE','OLG'), targets.use =  c('MG_L','MG_H'), remove.isolate = T)+
+  labs(title = 'GSE167593')+ theme(plot.title = element_text(hjust = 0.5))
+
+
+cellchat <- readRDS('downstream analysis/cellchat/GSE174574cellchat.rds')
+
+GSE174574_ligands <- netVisual_bubble(cellchat, sources.use = c('MG_L','MG_H'), targets.use=c('AS','EC','GRA','LYM','Mo/Ma','NPC','OLG','PC','EpC'),remove.isolate = T)+
+  labs(title = 'GSE174574')+ theme(plot.title = element_text(hjust = 0.5))
+GSE174574_receptors <- netVisual_bubble(cellchat, sources.use=c('AS','EC','GRA','LYM','Mo/Ma','NPC','OLG','PC','EpC'), targets.use =c('MG_L','MG_H'), remove.isolate = T)+
+  labs(title = 'GSE174574')+ theme(plot.title = element_text(hjust = 0.5))
+
+
+GSE167593_df.net <- subsetCommunication(cellchat) 
+
+GSE174574_df.net <- subsetCommunication(cellchat) 
+
+
+## L_ligands
+ligand_GSE167593 <- subset(GSE167593_df.net,source=='MG_L')
+ligand_GSE174574 <- subset(GSE174574_df.net,source=='MG_L')
+
+length(unique(c(ligand_GSE167593$ligand,ligand_GSE174574$ligand)))
+
+
+
+## L_receptor
+receptor_GSE167593 <- subset(GSE167593_df.net,target=='MG_L')
+receptor_GSE174574 <- subset(GSE174574_df.net,target=='MG_L')
+
+length(unique(c(receptor_GSE167593$receptor,receptor_GSE174574$receptor)))
+
+
+
+## H_ligands
+ligand_GSE167593 <- subset(GSE167593_df.net,source=='MG_H')
+ligand_GSE174574 <- subset(GSE174574_df.net,source=='MG_H')
+
+length(unique(c(ligand_GSE167593$ligand,ligand_GSE174574$ligand)))
+
+
+## H_receptor
+receptor_GSE167593 <- subset(GSE167593_df.net,target=='MG_H')
+receptor_GSE174574 <- subset(GSE174574_df.net,target=='MG_H')
+
+length(unique(c(receptor_GSE167593$receptor,receptor_GSE174574$receptor)))
+
+
+
+
+
+
+
