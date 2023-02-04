@@ -1,0 +1,78 @@
+data1 <- readRDS('annotationtable.rds')
+test1 <- readRDS('annotationaccuracy.rds')
+
+colnames(data1) <- c('Sl', 'Sc', 'R' ,'Sm', 'Sp','ref')
+
+
+## 多分类中不同方法的精度评估
+# http://tecdat.cn/r%e8%af%ad%e8%a8%80%e4%b8%ad%e7%9a%84%e5%a4%9a%e7%b1%bb%e5%88%ab%e9%97%ae%e9%a2%98%e7%9a%84%e7%bb%a9%e6%95%88%e8%a1%a1%e9%87%8f%ef%bc%9af1-score-%e5%92%8c%e5%b9%bf%e4%b9%89auc/
+# BiocManager::install('MetricsWeighted')
+
+# 以下是手动计算精确率的代码
+# calculate.accuracy <- function(predictions, ref.labels) {return(length(which(predictions == ref.labels)) / length(ref.labels))}
+# 也可以用下面的包
+library(MetricsWeighted)
+
+
+## 组合的合并函数
+get_consensus_label <- function(labels){
+  labels <- labels[labels != "ambiguous"]
+  if (length(labels) == 0) {return("ambiguous")}
+  freq <- table(labels)
+  label <- names(freq)[which(freq == max(freq))]
+  if (length(label) > 1) {return("ambiguous")}
+  return(label)
+}
+
+## 计算不同组合的精确度 
+data2=data1[1:5]
+clustername=names(data2)
+n=length(clustername)
+clustercombi=list()
+for (i in 1:n) {
+  cluster1=t(combn(clustername,i))
+  a1=split(cluster1,1:nrow(cluster1))
+  clustercombi=c(clustercombi,a1)
+}
+
+
+## 计算除外abmcious的precise
+resultcombine=sapply(clustercombi, function(x){
+  a=paste(x,collapse = '-')
+  tmp=apply(data1[x],1, get_consensus_label)
+  tmpdata=data.frame(cbind(data1$ref,tmp))
+  n=sum(tmpdata$tmp=='ambiguous')
+  tmpdata=tmpdata[tmpdata$tmp!='ambiguous',]
+  
+  value=accuracy(tmpdata[1], tmpdata[2])
+  return(c('name'=a,'value'=value,'dropout'=n))
+})
+resultcombine=data.frame(t(resultcombine))
+resultcombine$dropout <- as.numeric(resultcombine$dropout)
+
+
+## 计算总的precise
+
+resultcombine2=sapply(clustercombi, function(x){
+  a=paste(x,collapse = '-')
+  tmp=apply(data1[x],1, get_consensus_label)
+  tmpdata=data.frame(cbind(data1$ref,tmp))
+  n=sum(tmpdata$tmp=='ambiguous')
+  
+  
+  value=accuracy(tmpdata[1], tmpdata[2])
+  return(c('name'=a,'value'=value,'dropout'=n))
+})
+resultcombine2=data.frame(t(resultcombine2))
+resultcombine2$dropout <- as.numeric(resultcombine2$dropout)
+
+
+
+## 汇总
+results <- data.frame('Tool Names'= resultcombine2$name, 'MR'=resultcombine$value,'tMR'=resultcombine2$value)
+write.csv(results,file='result.csv')
+
+
+
+MR: matching ratio
+tMR: total matching ratio
