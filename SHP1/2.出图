@@ -1,0 +1,12 @@
+result1 <- readRDS('result1.rds')
+dd = result1[order(result1[,3],decreasing = T),]##按相关性数值排序
+dd <- dd[grep("GOBP",dd$mRNAs),]
+
+##提取作图数据，正相关前十与负相关前十
+tmp<-dd[2:21,]
+tmp$abscor <- abs(tmp$cor)
+tmp$"-log10(P-value)"<- -log10(tmp$p.value)
+##画图
+library(ggplot2)
+tmp$mRNAs <- factor(tmp$mRNAs, levels = tmp$mRNAs)
+ggplot(tmp,aes(cor,mRNAs, color = `-log10(P-value)`))+geom_point(size=5)+theme_bw()
