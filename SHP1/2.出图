@@ -9,4 +9,5 @@ tmp$"-log10(P-value)"<- -log10(tmp$p.value)
 ##画图
 library(ggplot2)
 tmp$mRNAs <- factor(tmp$mRNAs, levels = tmp$mRNAs)
-ggplot(tmp,aes(cor,mRNAs, color = `-log10(P-value)`))+geom_point(size=5)+theme_bw()
+ggplot(tmp,aes(cor,mRNAs, color = `-log10(P-value)`))+
+  geom_point(size=5)+theme_bw()+labs(y = "")
