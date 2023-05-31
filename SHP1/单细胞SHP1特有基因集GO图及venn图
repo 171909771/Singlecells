@@ -1,0 +1,51 @@
+dat1 <-  readRDS('geneset1.rds')
+dat2 <-  readRDS('geneset2.rds')
+dat3 <-  readRDS('geneset3.rds')
+
+
+############################## plot venn
+library(ggvenn)
+set1 <- dat1[["MCAO"]][["Perivascular cells"]][["genenames"]]
+set2 <- dat1[["Sham"]][["Perivascular cells"]][["genenames"]]
+
+# Prepare the data as logical vectors or columns
+venn_data <- list( MCAO = set1,  Sham = set2)
+myplot <- ggvenn(venn_data,set_name_size = 4)+ labs(title="Perivascular cells")+
+  theme(plot.title = element_text(hjust = 0.5, vjust = -20))
+
+ggsave("my_plot.png", plot = myplot, width = 5, height = 5, dpi = 300)
+
+interdat <- intersect(set1,set2)
+
+
+
+#################################GO ANALYSIS
+
+library(GOplot)
+library(ggplot2)
+library(ggsci)
+library(clusterProfiler)
+
+
+
+GO_database <- 'org.Mm.eg.db' #GO分析指定物种，物种缩写索引表详见http://bioconductor.org/packages/release/BiocViews.html#___OrgDb
+KEGG_database <- 'mmu' #KEGG分析指定物种，物种缩写索引表详见http://www.genome.jp/kegg/catalog/org_list.html
+
+#gene ID转换
+gene <- bitr(interdat,fromType = 'SYMBOL',toType = 'ENTREZID',OrgDb = GO_database)
+
+GO<-enrichGO( gene$ENTREZID,#GO富集分析
+              OrgDb = GO_database,
+              keyType = "ENTREZID",#设定读取的gene ID类型
+              ont = "BP",#(ont为ALL因此包括 Biological Process,Cellular Component,Mollecular Function三部分）
+              pvalueCutoff = 0.05,#设定p值阈值
+              qvalueCutoff = 0.05,#设定q值阈值
+              readable = T)
+
+goresult <- GO@result
+
+## 出图
+myplot <- dotplot(GO, showCategory =20,label_format=100)
+ggsave("my_plot.png", plot = myplot, width = 10, height = 5, dpi = 300,scale =1.5)
+
+
