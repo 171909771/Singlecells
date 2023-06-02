@@ -1,0 +1,65 @@
+library(Seurat)
+dat1 <- readRDS('prunnedcelltype_auc.rds')
+
+DimPlot(dat1, reduction = "umap")
+
+
+library(monocle)
+dat1 <- subset(dat1,celltype=='Microglia')
+DefaultAssay(object = dat1 ) <- "RNA"
+expr_matrix <- as.matrix(dat1@assays[["RNA"]]@counts)
+pd <- dat1@meta.data
+fd <- data.frame(gene_short_name= rownames(expr_matrix) , row.names = rownames(expr_matrix))
+pd <- new("AnnotatedDataFrame", data = pd)
+fd <- new("AnnotatedDataFrame", data = fd)
+cds <- newCellDataSet(cellData=expr_matrix, phenoData  = pd, featureData  = fd,
+                      lowerDetectionLimit = 0.1)
+
+cds <- estimateSizeFactors(cds)  
+cds <- estimateDispersions(cds)
+
+
+
+### 2.使用monocle选择的高变基因
+disp_table <- dispersionTable(cds) 
+disp.genes <- subset(disp_table, mean_expression >= 0.1 & dispersion_empirical >= 1 * dispersion_fit)$gene_id
+cds <- setOrderingFilter(cds, disp.genes)
+plot_ordering_genes(cds)
+
+
+### 确定PCA中dim的个数，肘拐点
+plot_pc_variance_explained(cds, return_all = F)
+### 设置n值，肘拐点
+n= 6
+cds <- reduceDimension(cds, max_components = 2,method = 'DDRTree') 
+cds <- orderCells(cds)
+
+
+plot_cell_trajectory(cds, color_by = "Pseudotime")
+
+
+plot_cell_trajectory(cds, color_by = "State",cell_size = .5)
+
+
+###########################单基因出图
+readRDS('cds.rds')
+
+
+pData(cds)$Ptpn6 = log2( exprs(cds)['Ptpn6',]+1)
+library("ggsci")
+plot_cell_trajectory(cds, color_by = "Ptpn6",cell_size = .2) + scale_color_gsea()
+
+plot_genes_jitter(cds['Ptpn6',], grouping = "State", color_by = "State") 
+
+plot_genes_in_pseudotime(cds['Ptpn6',], color_by = "State")
+
+
+
+myplot <-  plot_genes_in_pseudotime(cds['Ikbkg',], color_by = "State")
+ggsave("myplot.png", plot = myplot, width = 5, height = 5, dpi = 300)
+
+
+
+#################查看基因名
+
+rownames(cds)[grep("IKBKG",ignore.case = T,rownames(cds))]
