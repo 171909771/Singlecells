@@ -1,0 +1,50 @@
+library(Seurat)
+library(SeuratWrappers)
+library(harmony)
+
+
+# 数据前处理 -------------------------------------------------------------------
+
+samples=list.files("rawdata/")
+samples
+dir <- file.path('./rawdata',samples)
+names(dir) <- samples
+
+scRNAlist <- list()
+for(i in 1:length(dir)){
+  print(i)
+  counts <- Read10X(data.dir = dir[i])
+  scRNAlist[[i]] <- CreateSeuratObject(counts)
+}
+scRNA2 <- merge(scRNAlist[[1]], y=c(scRNAlist[[2]]))
+sce.list=scRNA2
+mt=rownames(sce.list)[grep("^mt-",rownames(sce.list),ignore.case = T)]
+mt=substr(mt[1],0,3)
+sce.list <- PercentageFeatureSet(sce.list, pattern = mt, col.name = "percent.mt")
+# 查看表达情况
+VlnPlot(sce.list, features = c("nFeature_RNA", "nCount_RNA","percent.mt"), ncol = 3)
+# 设定表达阈值
+sce.list <- subset(sce.list, subset = nFeature_RNA <7500  & percent.mt < 75)
+# 修改分组情况
+levels(sce.list@active.ident)=c('MCAO','Sham')
+# 根据分组信息进行拆分数据
+sce.list$orig.ident=sce.list@active.ident
+sce.list <- SplitObject(sce.list, split.by = "orig.ident")
+rm(list=ls()[ls()!='sce.list'])
+gc()
+
+
+# 数据去0、整合及降维 ----------------------------------------------------------------------
+## 操作方法：分别用mcao和sham去alra，不然内存不够
+
+dat1 <- NormalizeData(sce.list[["Sham"]])
+dat1 <- RunALRA(dat1)
+
+## 操作方法：最后再合并
+
+dat1 <- readRDS('dat1.rds')
+dat2 <- readRDS('dat2.rds')
+
+scRNA2 <- merge(dat1,dat2)
+
+saveRDS(scRNA2,'scRNA2.rds')
