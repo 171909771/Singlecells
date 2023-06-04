@@ -48,3 +48,24 @@ dat2 <- readRDS('dat2.rds')
 scRNA2 <- merge(dat1,dat2)
 
 saveRDS(scRNA2,'scRNA2.rds')
+
+
+## 数据整合
+scRNA2 <- readRDS('scRNA2.rds')
+
+DefaultAssay(scRNA2)='RNA'
+scRNA2 <- scRNA2 %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA(verbose = FALSE)
+scRNA2 <- RunHarmony(scRNA2, group.by.vars = 'orig.ident')
+
+
+## 数据降维
+scRNA2 <- RunTSNE(scRNA2,reduction = "harmony")
+scRNA2 <- RunUMAP(scRNA2,reduction = "harmony", dims = 1:30)
+scRNA2@meta.data[["tmp"]] <- as.factor(scRNA2@meta.data[["orig.ident"]])
+levels(scRNA2@meta.data[["tmp"]]) <- c("MCAO","Sham")
+DimPlot(scRNA2,reduction = 'tsne',group.by = 'tmp')
+DimPlot(scRNA2,reduction = 'umap',group.by = 'tmp')
+
+saveRDS(scRNA2,file = 'umap_tsne.rds')
+
+
