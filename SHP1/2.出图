@@ -9,5 +9,7 @@ tmp$"-log10(P-value)"<- -log10(tmp$p.value)
 ##画图
 library(ggplot2)
 tmp$mRNAs <- factor(tmp$mRNAs, levels = tmp$mRNAs)
-ggplot(tmp,aes(cor,mRNAs, color = `-log10(P-value)`))+
+myplot <- ggplot(tmp,aes(cor,mRNAs, color = `-log10(P-value)`))+
   geom_point(size=5)+theme_bw()+labs(y = "")
+
+ggsave("my_plot.png", plot = myplot, width = 15, height = 7, dpi = 300,scale =0.8)
