@@ -1,0 +1,63 @@
+library(SingleR)
+library("celldex")
+library('SCINA')
+wcl <- readRDS("Harmony.array_merge.rds")
+DimPlot(wcl, group.by = "RNA_snn_res.1",reduction ="umap",label =T)
+mouseRNA <- MouseRNAseqData()
+wcl_for_SingleR <- GetAssayData(wcl, slot="data")
+## SingleR
+### per cells
+pbmc.hesc <- SingleR(test = wcl_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.main)
+wcl@meta.data$labels2 <-pred.mouseRNA$labels
+DimPlot(wcl, group.by =  "labels2",reduction = "umap",label =T)
+
+## for cluster
+pred.mouseRNA <- SingleR(test = wcl_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.fine,
+                          clusters = wcl@meta.data[["seurat_clusters"]] , de.method="wilcox",
+                         assay.type.test = "logcounts", assay.type.ref = "logcounts")
+
+pred.mouseRNA <- SingleR(test = wcl_for_SingleR, ref = mouseRNA, labels = mouseRNA$label.fine,
+                         clusters = wcl@meta.data[["seurat_clusters"]])
+
+wcl@meta.data$labels2 <- pred.mouseRNA@listData[["pruned.labels"]][wcl@meta.data[["seurat_clusters"]]]
+DimPlot(wcl, group.by =  "labels2",reduction = "umap",label =T)
+
+## SCINA
+library(readxl)
+dat1=read_excel('Cell_marker_Seq.xlsx')
+dat2=subset(dat1,Species=='Mouse' & `Tissue class` == 'Brain' & `Cancer type`=='Normal')
+dat3=dat2[c('Cell name','Symbol')]
+list1= split(dat3, dat3$`Cell name`)
+list2=lapply(list1, function(x){
+  x$Symbol})
+### 1.去除重复项基因
+list3=lapply(list2, function(x){
+  x=unique(x)
+})
+
+gene1=rownames(wcl)
+list3=lapply(list3, function(x){
+  x=x[x%in% gene1]
+  if(length(x)>0){
+    return(x)
+  }
+})
+
+# list3=lapply(list3, function(x){
+#   if(length(x)>200){
+#     tmp=sce.list[x,]
+#     tmp <- FindVariableFeatures(tmp, selection.method = "vst", nfeatures = 200)
+#     return(tmp@assays[["alra"]]@var.features)
+#   }
+#   return(x)
+# })
+
+list3=Filter(Negate(is.null), list3)
+exprMatrix <- as.matrix(wcl@assays[["RNA"]]@data)
+
+predictions.scina = SCINA(exp = exprMatrix, signatures = list3,
+                                 rm_overlap = F, allow_unknown = F)
+
+wcl@meta.data$labels2 <- predictions.scina[["cell_labels"]]
+
+DimPlot(wcl, group.by =  "labels2",reduction = "umap")
