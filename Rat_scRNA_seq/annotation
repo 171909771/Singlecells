@@ -24,40 +24,55 @@ DimPlot(wcl, group.by =  "labels2",reduction = "umap",label =T)
 
 ## SCINA
 library(readxl)
+
+### cellmarker
 dat1=read_excel('Cell_marker_Seq.xlsx')
 dat2=subset(dat1,Species=='Mouse' & `Tissue class` == 'Brain' & `Cancer type`=='Normal')
 dat3=dat2[c('Cell name','Symbol')]
 list1= split(dat3, dat3$`Cell name`)
-list2=lapply(list1, function(x){
-  x$Symbol})
-### 1.去除重复项基因
-list3=lapply(list2, function(x){
+list2 <- lapply(list1, function(x){
+  x=x$Symbol
   x=unique(x)
-})
-
-gene1=rownames(wcl)
-list3=lapply(list3, function(x){
-  x=x[x%in% gene1]
+  x=x[x%in% rownames(single_obj)]
   if(length(x)>0){
     return(x)
+  }})
+list3=Filter(Negate(is.null), list3)
+
+### panglao
+dat1<- read_excel('mm_genelist.xlsx')
+dat1$Symbol <- capitalize(tolower(dat1$`official gene symbol`))
+dat3=dat1[c('cell type','Symbol')]
+list1= split(dat3, dat3$`cell type`)
+list2 <- lapply(list1, function(x){
+  x=x$Symbol
+  x=unique(x)
+  x=x[x%in% rownames(single_obj)]
+  if(length(x)>0){
+    return(x)
+  }})
+list3=Filter(Negate(is.null), list2)
+list3=lapply(list3, function(x){
+  if(length(x)>150){
+    x=x[x %in% single_obj@assays[["SCT"]]@var.features]
   }
+  return(x)
 })
 
-# list3=lapply(list3, function(x){
-#   if(length(x)>200){
-#     tmp=sce.list[x,]
-#     tmp <- FindVariableFeatures(tmp, selection.method = "vst", nfeatures = 200)
-#     return(tmp@assays[["alra"]]@var.features)
-#   }
-#   return(x)
-# })
-
-list3=Filter(Negate(is.null), list3)
-exprMatrix <- as.matrix(wcl@assays[["RNA"]]@data)
-
+### 准备SCINA
+exprMatrix <- as.matrix(single_obj@assays[["SCT"]]@data)
 predictions.scina = SCINA(exp = exprMatrix, signatures = list3,
-                                 rm_overlap = F, allow_unknown = F)
+                          rm_overlap = F, allow_unknown = F)
+single_obj@meta.data$labels <- predictions.scina[["cell_labels"]]
 
-wcl@meta.data$labels2 <- predictions.scina[["cell_labels"]]
-
-DimPlot(wcl, group.by =  "labels2",reduction = "umap")
+### 导入到seurat
+tmp <- table(single_obj@active.ident,single_obj@meta.data[["labels"]])
+tmp <- data.frame(tmp)
+library(reshape2)
+tmp1 <- dcast(tmp, Var1 ~ Var2, value.var="Freq")
+tmp2 <- apply(tmp1, 1, function(x){
+  colnames(tmp1)[which.max(x)]
+})
+single_obj@meta.data[["finallabels"]] <- tmp2[single_obj@active.ident]
+## 修改下面的名称
+single_obj@meta.data[["panglao"]] <- single_obj@meta.data[["finallabels"]]
