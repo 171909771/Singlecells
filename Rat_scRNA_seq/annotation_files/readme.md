@@ -1,6 +1,7 @@
 panglao: mm_genelist.xlsx
 
 ### genelist on "Brain Cell Type Specific Gene Expression and Co-expression Network Architectures"
+### based on 41598_2018_27293_MOESM3_ESM.xlsx
 ```
 Marker <- list(Micro=capitalize(tolower(c('CCL4','CCL3','CSF1R','CX3CR1','P2RY12'))),
                Endo=capitalize(tolower(c('APOLD1','FLT1','RGS5','PTPRB','TM4SF1','CD34'))),
