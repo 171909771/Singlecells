@@ -1,0 +1,83 @@
+library(Seurat)
+dat1 <- readRDS('prunnedcelltype_auc.rds')
+
+DimPlot(dat1, reduction = "umap")
+
+
+library(monocle)
+dat1 <- subset(dat1,celltype=='Monocytes/Macrophages')
+DefaultAssay(object = dat1 ) <- "RNA"
+expr_matrix <- as.matrix(dat1@assays[["RNA"]]@counts)
+pd <- dat1@meta.data
+fd <- data.frame(gene_short_name= rownames(expr_matrix) , row.names = rownames(expr_matrix))
+pd <- new("AnnotatedDataFrame", data = pd)
+fd <- new("AnnotatedDataFrame", data = fd)
+cds <- newCellDataSet(cellData=expr_matrix, phenoData  = pd, featureData  = fd,
+                      lowerDetectionLimit = 0.1)
+
+cds <- estimateSizeFactors(cds)  
+cds <- estimateDispersions(cds)
+
+
+
+### 2.使用monocle选择的高变基因
+disp_table <- dispersionTable(cds) 
+disp.genes <- subset(disp_table, mean_expression >= 0.1 & dispersion_empirical >= 1 * dispersion_fit)$gene_id
+cds <- setOrderingFilter(cds, disp.genes)
+
+# saveRDS(cds,"cds.rds")  GSE174574 MICROGLIA 需要保存后读取
+# cds <- readRDS('cds.rds')
+cds <- reduceDimension(cds, max_components = 2,method = 'DDRTree') 
+
+cds <- orderCells(cds)
+cds <- orderCells(cds,root_state = 7)  # 先运行，后用,root_state=4设置起始点（小胶质细胞）
+
+
+myplot <- plot_cell_trajectory(cds, color_by = "Pseudotime")+ theme(text = element_text(size = 20),axis.text = element_text(size = 20))+
+  theme(legend.key.width = unit(2, "cm"))
+ggsave("Pseudotime.png", plot = myplot, width = 7, height = 5, dpi = 300)
+
+
+myplot <- plot_cell_trajectory(cds, color_by = "State")+ theme(text = element_text(size = 20),axis.text = element_text(size = 20))
+ggsave("State.png", plot = myplot, width = 7, height = 5, dpi = 300)
+
+myplot <- plot_cell_trajectory(cds, color_by = "tmp")+
+  theme(text = element_text(size = 20),axis.text = element_text(size = 20))+
+  labs(color = "Group")
+ggsave("Group.png", plot = myplot, width = 7, height = 5, dpi = 300)
+
+###########################单基因出图
+library("ggsci")
+
+tmp <- c("Ikbkb","Nfkb1","Nfkb2","Chuk","Ptpn6","Il1a", "Il1b", "Tnf", "Il6")
+
+lapply(tmp, function(x){
+  
+  custom <- x
+  pData(cds)$custom = log2( exprs(cds)[custom,]+1)
+  n=ncol(pData(cds))
+  colnames(pData(cds))[n] <- custom
+  
+  myplot <- plot_cell_trajectory(cds, color_by = custom,cell_size = .2) + 
+    scale_color_gsea()+theme(text = element_text(size = 20),axis.text = element_text(size = 20))+
+    theme(legend.key.width = unit(2, "cm"))
+  ggsave(paste(custom,"_ori.png",sep = ""), plot = myplot, width = 7, height = 5, dpi = 300)
+  
+  myplot <- plot_genes_jitter(cds[custom,], grouping = "State", color_by = "tmp") +
+    labs(color = "Group")+
+    theme(text = element_text(size = 20),axis.text = element_text(size = 20))
+  ggsave(paste(custom,"_state.png",sep = ""), plot = myplot, width = 7, height = 5, dpi = 300)
+  
+  
+  myplot <- plot_genes_in_pseudotime(cds[custom,], color_by = "tmp")+
+    labs(color = "Group")+
+    theme(text = element_text(size = 20),axis.text = element_text(size = 20))
+  ggsave(paste(custom,"_pseudotime.png",sep = ""), plot = myplot, width = 7, height = 5, dpi = 300)
+  
+  
+  
+})
+
+#################查看基因名
+
+rownames(cds)[grep("Il6",ignore.case = T,rownames(cds))]
