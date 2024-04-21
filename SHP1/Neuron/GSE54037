@@ -1,0 +1,97 @@
+
+# GSE54037
+## 方法1
+library(limma)
+library(edgeR)
+## 读取数据并转换一直的变量，改变dat1名称
+dat=read.delim("GSE54037_series_matrix.txt.gz",header = T,comment.char = "!")
+# library(devtools)
+# install_github("jmzeng1314/AnnoProbe")
+library(AnnoProbe)
+gpl='GPL14746'
+## 可以更换type信息，具体查看?idmap
+probe2gene=idmap(gpl,type = 'soft', mirror = "tencent")
+head(probe2gene)
+
+
+
+# 整理数据
+dat1=merge(dat,probe2gene,by.x="ID_REF",by.y="ID")
+### 由于一个基因可能对应多个行数据，下面的代码是基于每个相同的基因求平均值
+dat <- aggregate(x = dat1[,2:(length(dat1)-1)],
+                 by = list(dat1$symbol),
+                 FUN = mean)
+rownames(dat)=dat$Group.1
+dat$Group.1=NULL
+
+boxplot(dat)
+### 如果需要
+dat=log2(dat)
+dat=data.frame(normalizeBetweenArrays(dat))
+colnames(dat)=c("ctrl24_1","ctrl24_2","ctrl24_3","ctrl7_1","ctrl7_2","ctrl7_3",
+                "ogd24_1","ogd24_2","ogd24_3","ogd7_1","ogd7_2","ogd7_3")
+
+## 24h
+dat6 <- dat[c(1,2,3,7,8,9)]
+
+group= c("ctrl","ctrl","ctrl","ogd","ogd","ogd")  ##注意分组情况
+## 把matrix转换呈就用EdgeR data
+y <- DGEList(counts=dat6,group=group)
+## PCA看效果
+plotMDS(y,labels=group, dim=c(1,2)) # 查看PCA 前2维度
+title(main="A. Sample groups")
+
+
+## ~0 代表没有+后面第一个factor的截距，形成一个列表
+## 如何理解：https://treeh.cn/?id=21
+## 如何理解：https://shixiangwang.github.io/home/cn/post/2020-10-29-what-has-been-done-when-use-limma/
+design <- model.matrix(~0+group)
+colnames(design)=levels(factor(group))
+rownames(design)=colnames(dat6)
+## 建立对比关系
+contrast.matrix<-makeContrasts(ctrlvstrt=ctrl - ogd,levels = design)
+# 线性回归
+vfit <- lmFit(dat6, design)
+vfit1 <- contrasts.fit(vfit, contrasts=contrast.matrix)
+## 贝叶斯算法：http://rvdsd.top/2019/08/19/Data%20Analysis%20for%20the%20life%20sciences/DALS019_StatisticalModels2_Beyes_Hierarchical/
+## 贝叶斯算法：https://www.jianshu.com/p/1cfffa115c08
+### 就是把每个基因的方差趋同于整个基因的趋势
+efit1 <- eBayes(vfit1)
+# coef是取makeContrasts中第几个比较
+tempOutput24 = topTable(efit1, n=Inf)
+## logFC:ctrl比trt小则为负
+
+tempOutput24$genename <- rownames(tempOutput24)
+
+
+## 7h
+dat6 <- dat[-c(1,2,3,7,8,9)]
+
+group= c("ctrl","ctrl","ctrl","ogd","ogd","ogd")  ##注意分组情况
+## 把matrix转换呈就用EdgeR data
+y <- DGEList(counts=dat6,group=group)
+## PCA看效果
+plotMDS(y,labels=group, dim=c(1,2)) # 查看PCA 前2维度
+title(main="A. Sample groups")
+
+
+## ~0 代表没有+后面第一个factor的截距，形成一个列表
+## 如何理解：https://treeh.cn/?id=21
+## 如何理解：https://shixiangwang.github.io/home/cn/post/2020-10-29-what-has-been-done-when-use-limma/
+design <- model.matrix(~0+group)
+colnames(design)=levels(factor(group))
+rownames(design)=colnames(dat6)
+## 建立对比关系
+contrast.matrix<-makeContrasts(ctrlvstrt=ctrl - ogd,levels = design)
+# 线性回归
+vfit <- lmFit(dat6, design)
+vfit1 <- contrasts.fit(vfit, contrasts=contrast.matrix)
+## 贝叶斯算法：http://rvdsd.top/2019/08/19/Data%20Analysis%20for%20the%20life%20sciences/DALS019_StatisticalModels2_Beyes_Hierarchical/
+## 贝叶斯算法：https://www.jianshu.com/p/1cfffa115c08
+### 就是把每个基因的方差趋同于整个基因的趋势
+efit1 <- eBayes(vfit1)
+# coef是取makeContrasts中第几个比较
+tempOutput7 = topTable(efit1, n=Inf)
+## logFC:ctrl比trt小则为负
+
+tempOutput7$genename <- rownames(tempOutput7)
