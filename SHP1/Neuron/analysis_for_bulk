@@ -1,0 +1,72 @@
+# 
+
+
+## gse178997
+data <- read.table(gzfile("./GSE178997_HT22-OGD-counts.txt.gz"), header = TRUE, sep = "\t")
+library(biomaRt)
+mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+ensembl_ids <- rownames(data)
+gene_info <- getBM(attributes = c('ensembl_gene_id', 'external_gene_name'),
+                   filters = 'ensembl_gene_id',
+                   values = ensembl_ids,
+                   mart = mart)
+rownames(gene_info)=gene_info$ensembl_gene_id
+data$row_names <- rownames(data)
+gene_info$row_names <- rownames(gene_info)
+combined_data <- merge(data, gene_info, by = "row_names")
+combined_data$row_names <- NULL
+
+library(dplyr)
+library(tibble)  # Load the tibble package for column_to_rownames function
+
+GSE178997 <- combined_data %>%
+  filter(!is.na(external_gene_name), external_gene_name != "") %>%  # Filter out NA and empty strings
+  group_by(external_gene_name) %>%
+  summarize(across(2:8, ~if(n() > 1) mean(., na.rm = TRUE) else first(.)), .groups = 'drop') %>%
+  ungroup() %>%
+  select(HT22.OGD.control.rep1, HT22.OGD.control.rep2, HT22.OGD.3h.rep1, HT22.OGD.3h.rep2, HT22.OGD.6h.rep1, HT22.OGD.6h.rep2, external_gene_name) %>%  # Select specific columns
+  arrange(external_gene_name) %>%
+  column_to_rownames(var = "external_gene_name")  # Convert external_gene_name to rownames and remove the column
+
+
+## GSE111434
+# Path to the gzipped Excel file
+library(readxl)
+# Read the .xls file
+file_path <- "GSE111434_counts.xls"  # Adjust the path if the file is in a different directory
+data <- read_excel(file_path)
+GSE111434 <- data[,c(8:13)]
+rownames(GSE111434) <- data$...1
+
+
+## GSE248392
+
+library(readr)
+
+untar("GSE248392_RAW.tar", exdir = "GSE248392_RAW")
+
+file_list <- list.files(path = "GSE248392_RAW", pattern = "\\.gz", full.names = TRUE)
+
+# Read each file into a list of data frames
+data_frames <- lapply(file_list, function(file) {
+  # Extract the base name without the extension for use as a column name
+  filename <- tools::file_path_sans_ext(basename(file))
+  # Read the file with custom column names
+  read_delim(file, delim = "\t", col_names = c("genename", filename))
+})
+
+
+
+# If all data frames are supposed to be combined row-wise
+combined_data <- do.call(cbind, data_frames)
+
+GSE248392 <- combined_data[, !colnames(combined_data) %in% c("genename")]
+
+rownames(GSE248392) <- combined_data$genename
+
+
+
+
+
+
+
