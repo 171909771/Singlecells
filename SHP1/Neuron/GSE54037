@@ -95,3 +95,63 @@ tempOutput7 = topTable(efit1, n=Inf)
 ## logFC:ctrl比trt小则为负
 
 tempOutput7$genename <- rownames(tempOutput7)
+
+
+
+### plot volcano 
+library(ggplot2)
+
+tempOutput7$Significant <- "Not Significant"
+tempOutput7$Significant[tempOutput7$P.Value < 0.05 & abs(tempOutput7$logFC) > 1] <- "Significant"
+
+volcano_plot <- ggplot(tempOutput7, aes(x = logFC, y = -log10(P.Value), color = Significant)) +
+  geom_point(alpha = 0.5) +  # Adjust point transparency with alpha
+  scale_color_manual(values = c("Not Significant" = "grey", "Significant" = "red")) +
+  labs(title = "Volcano plot of differential expression",
+       x = "Log2 Fold Change",
+       y = "-Log10 P-value") +
+  theme_minimal()
+
+genes_of_interest <- "Ptpn6"  # replace with your genes of interest
+volcano_plot <- volcano_plot +
+  geom_text(data = subset(tempOutput7, genename %in% genes_of_interest), aes(label = genename), vjust = 1.5, color = "blue")
+print(volcano_plot)
+
+
+library(ggplot2)
+
+tempOutput7$Significant <- "Not Significant"
+tempOutput7$Significant[tempOutput7$P.Value < 0.05 & abs(tempOutput7$logFC) > 1] <- "Significant"
+
+volcano_plot <- ggplot(tempOutput7, aes(x = logFC, y = -log10(P.Value), color = Significant)) +
+  geom_point(alpha = 0.5) +  # Adjust point transparency with alpha
+  scale_color_manual(values = c("Not Significant" = "grey", "Significant" = "red")) +
+  labs(title = "Volcano plot of differential expression",
+       x = "Log2 Fold Change",
+       y = "-Log10 P-value") +
+  theme_minimal()
+
+genes_of_interest <- "Ptpn6"  # replace with your genes of interest
+volcano_plot <- volcano_plot +
+  geom_text(data = subset(tempOutput7, genename %in% genes_of_interest), aes(label = genename), vjust = 1.5, color = "blue")
+print(volcano_plot)
+
+###################################
+
+
+tempOutput24$Significant <- "Not Significant"
+tempOutput24$Significant[tempOutput24$P.Value < 0.05 & abs(tempOutput24$logFC) > 1] <- "Significant"
+
+volcano_plot <- ggplot(tempOutput24, aes(x = logFC, y = -log10(P.Value), color = Significant)) +
+  geom_point(alpha = 0.5) +  # Adjust point transparency with alpha
+  scale_color_manual(values = c("Not Significant" = "grey", "Significant" = "red")) +
+  labs(title = "Volcano plot of differential expression",
+       x = "Log2 Fold Change",
+       y = "-Log10 P-value") +
+  theme_minimal()
+
+genes_of_interest <- "Ptpn6"  # replace with your genes of interest
+volcano_plot <- volcano_plot +
+  geom_text(data = subset(tempOutput24, genename %in% genes_of_interest), aes(label = genename), vjust = 1.5, color = "blue")
+print(volcano_plot)
+
