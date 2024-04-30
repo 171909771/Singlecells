@@ -1,14 +1,42 @@
 library(Seurat)
-dat1 <- readRDS('prunnedcelltype_auc.rds')
+dat2 <- readRDS('prunnedcelltype_auc.rds')
+dat3 <- readRDS('prunnedcelltype.rds')
 
-DimPlot(dat1, reduction = "umap")
+dat2 <- subset(dat2,celltype=='Monocytes/Macrophages')
+dat3 <- subset(dat3,celltype=='Monocytes/Macrophages')
+
+
+
+DefaultAssay(object = dat2 ) <- "RNA"
+expr_matrix2 <- as.matrix(dat2@assays[["RNA"]]@counts)
+pd2 <- dat2@meta.data
+pd2 <- pd2[,5:6]
+
+
+DefaultAssay(object = dat3 ) <- "RNA"
+expr_matrix3 <- as.matrix(dat3@assays[["RNA"]]@counts)
+pd3 <- dat3@meta.data
+pd3 <- pd3[,5:6]
+
+matrix2_df <- as.data.frame(expr_matrix2)
+matrix3_df <- as.data.frame(expr_matrix3)
+
+merged_df <- merge(matrix2_df, matrix3_df, by = "row.names", all = F)
+rownames(merged_df) <- merged_df$Row.names
+merged_df <- merged_df[, -1]
+
+# Optionally convert back to matrix if required
+merged_matrix <- as.matrix(merged_df)
+
+
+# Assuming df1 and df2 are your data frames
+merged_df <- rbind(pd2, pd3)
+expr_matrix <- merged_matrix
+pd <- merged_df
 
 
 library(monocle)
-dat1 <- subset(dat1,celltype=='Monocytes/Macrophages')
-DefaultAssay(object = dat1 ) <- "RNA"
-expr_matrix <- as.matrix(dat1@assays[["RNA"]]@counts)
-pd <- dat1@meta.data
+
 fd <- data.frame(gene_short_name= rownames(expr_matrix) , row.names = rownames(expr_matrix))
 pd <- new("AnnotatedDataFrame", data = pd)
 fd <- new("AnnotatedDataFrame", data = fd)
@@ -25,31 +53,28 @@ disp_table <- dispersionTable(cds)
 disp.genes <- subset(disp_table, mean_expression >= 0.1 & dispersion_empirical >= 1 * dispersion_fit)$gene_id
 cds <- setOrderingFilter(cds, disp.genes)
 
-# saveRDS(cds,"cds.rds")  GSE174574 MICROGLIA 需要保存后读取
+# saveRDS(cds,"merge_macrophage.rds")  #GSE174574 MICROGLIA 需要保存后读取
 # cds <- readRDS('cds.rds')
-cds <- reduceDimension(cds, max_components = 2,method = 'DDRTree') 
+cds <- reduceDimension(cds, max_components = 3,method = 'DDRTree') 
 
 cds <- orderCells(cds)
-cds <- orderCells(cds,root_state = 7)  # 先运行，后用,root_state=4设置起始点（小胶质细胞）
+cds <- orderCells(cds,root_state = 1)  # 先运行，后用,root_state=4设置起始点（小胶质细胞）
 
 
 myplot <- plot_cell_trajectory(cds, color_by = "Pseudotime")+ theme(text = element_text(size = 20),axis.text = element_text(size = 20))+
   theme(legend.key.width = unit(2, "cm"))
-ggsave("Pseudotime.png", plot = myplot, width = 7, height = 5, dpi = 300)
 
 
-myplot <- plot_cell_trajectory(cds, color_by = "State")+ theme(text = element_text(size = 20),axis.text = element_text(size = 20))
-ggsave("State.png", plot = myplot, width = 7, height = 5, dpi = 300)
+plot_cell_trajectory(cds, color_by = "tmp")
 
-myplot <- plot_cell_trajectory(cds, color_by = "tmp")+
-  theme(text = element_text(size = 20),axis.text = element_text(size = 20))+
-  labs(color = "Group")
-ggsave("Group.png", plot = myplot, width = 7, height = 5, dpi = 300)
 
-###########################单基因出图
 library("ggsci")
 
-tmp <- c("Ikbkb","Nfkb1","Nfkb2","Chuk","Ptpn6","Il1a", "Il1b", "Tnf", "Il6")
+tmp <- c("Ikbkb","Nfkb1","Nfkb2","Chuk","Ptpn6","Il1a", "Il1b", "Tnf", "Il6", "C1qa")
+
+
+tmp <- c("Nfkbia","Rela","Nfkb2","Chuk","Ptpn6","Il1a", "Il1b", "Tnf", "Il6", "C1qa")
+
 
 lapply(tmp, function(x){
   
@@ -78,6 +103,18 @@ lapply(tmp, function(x){
   
 })
 
-#################查看基因名
 
-rownames(cds)[grep("Il6",ignore.case = T,rownames(cds))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
