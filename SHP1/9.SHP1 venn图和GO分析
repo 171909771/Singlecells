@@ -31,53 +31,44 @@ library(ggplot2)
 library(ggsci)
 library(clusterProfiler)
 
+# Set databases for GO and KEGG analysis
+GO_database <- 'org.Mm.eg.db'
+KEGG_database <- 'mmu'
 
+# Convert gene symbols to ENTREZ IDs
+gene <- bitr(interdat, fromType = 'SYMBOL', toType = 'ENTREZID', OrgDb = GO_database)
 
-GO_database <- 'org.Mm.eg.db' #GO分析指定物种，物种缩写索引表详见http://bioconductor.org/packages/release/BiocViews.html#___OrgDb
-KEGG_database <- 'mmu' #KEGG分析指定物种，物种缩写索引表详见http://www.genome.jp/kegg/catalog/org_list.html
+# Perform GO enrichment analysis
+GO <- enrichGO(gene$ENTREZID,
+               OrgDb = GO_database,
+               keyType = "ENTREZID",
+               ont = "BP",
+               pvalueCutoff = 0.05,
+               qvalueCutoff = 0.05,
+               readable = TRUE)
 
-#gene ID转换
-gene <- bitr(interdat,fromType = 'SYMBOL',toType = 'ENTREZID',OrgDb = GO_database)
-
-GO<-enrichGO( gene$ENTREZID,#GO富集分析
-              OrgDb = GO_database,
-              keyType = "ENTREZID",#设定读取的gene ID类型
-              ont = "BP",#(ont为ALL因此包括 Biological Process,Cellular Component,Mollecular Function三部分）
-              pvalueCutoff = 0.05,#设定p值阈值
-              qvalueCutoff = 0.05,#设定q值阈值
-              readable = T)
-
+# Extract results from the GO analysis
 goresult <- GO@result
 
+# Filter results for "signaling" related terms
+goresult <- goresult[grep("signaling", goresult$Description),]
 
-## 出图  （废除）
-myplot <- dotplot(GO, showCategory =20,label_format=100)
-ggsave("my_plot.png", plot = myplot, width = 10, height = 5, dpi = 300,scale =1.5)
-
-
-## 出sigaling图
-
-goresult <- goresult[grep("signaling",goresult$Description),]
-
-
+# Calculate GeneRatio
 goresult$GeneRatio <- goresult$Count / sum(goresult$Count)
 
+# Subset for significant results
+goresult <- subset(goresult, pvalue < 0.05)
 
-goresult <- subset(goresult,pvalue <0.05)
+# Order and limit to the top 10 significant terms
+goresult <- goresult[order(goresult$GeneRatio, decreasing = TRUE),][1:10,]
+goresult$Description <- factor(goresult$Description, levels = rev(goresult$Description))
 
-goresult <- goresult[order(goresult$GeneRatio,decreasing = F),]
-goresult$Description <- factor(goresult$Description, levels = goresult$Description)
-
-
-
-myplot <- ggplot(goresult, aes(x = GeneRatio, y = Description, size = Count, col = pvalue)) + 
+# Create a plot
+myplot <- ggplot(goresult, aes(x = GeneRatio, y = Description, size = Count, color = pvalue)) +
   geom_point() +
   theme_classic() +
   scale_color_gradient(low = "blue", high = "red") +
   theme(axis.title.y = element_blank())
 
+ggsave("Macrophages.png", plot = myplot, width = 10, height = 5, dpi = 300, scale = 0.8)
 
-
-
-ggsave("my_plot.png", plot = myplot, width = 12, height = 8, dpi = 300,scale =0.8)
-ggsave("my_plot.png", plot = myplot, width = 12, height = 8, dpi = 300,scale =1)
